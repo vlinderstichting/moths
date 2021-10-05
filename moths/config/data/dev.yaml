@@ -1,0 +1,6 @@
+data_paths:
+  - test_data/source_a
+  - test_data/source_b
+
+valid_path_file: test_data/valid-paths.txt
+label_map_file: test_data/label-map.csv

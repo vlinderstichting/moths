@@ -1,0 +1,6 @@
+defaults:
+  - code_config
+  - data: dev
+  - _self_
+
+debug: True
