@@ -4,3 +4,21 @@ data_paths:
 
 valid_path_file: test_data/valid-paths.txt
 label_map_file: test_data/label-map.csv
+
+test_fraction: 0.25
+batch_size: 1
+num_workers: 0
+pin_memory: false
+fake_data: false
+
+train_transforms:
+  - _target_: torchvision.transforms.RandomCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+
+
+test_transforms:
+  - _target_: torchvision.transforms.CenterCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+

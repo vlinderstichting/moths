@@ -1,6 +1,9 @@
 defaults:
+  - _self_
   - code_config
   - data: dev
-  - _self_
+  - model: dev
+  - lit: dev
+  - trainer: dev
 
 debug: True

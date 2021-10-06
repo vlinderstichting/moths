@@ -32,7 +32,7 @@ class FakeData(VisionDataset):
     def __init__(
         self,
         size: int = 1000,
-        image_size: Tuple[int, int, int] = (3, 224, 224),
+        image_size: Tuple[int, int, int] = (3, 512, 512),
         num_classes: int = 10,
         transform: Optional[Callable] = None,
     ) -> None:
@@ -44,11 +44,10 @@ class FakeData(VisionDataset):
 
         self.targets = list(
             torch.randint(
-                0,
-                self.num_classes,
+                low=0,
+                high=self.num_classes,
                 size=(size,),
                 dtype=torch.long,
-                generator=torch.manual_seed(31415),
             )
         )
 
