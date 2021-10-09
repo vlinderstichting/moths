@@ -36,6 +36,7 @@ def train(config: Config) -> None:
 
     data_module = DataModule(config.data)
     data_module.prepare_data()  # manually prepare data to set num_classes (to config?)
+    data_module.setup()
     model = get_model(config.model, data_module.num_classes)
     lit_module = LitModule(config.lit, model)
     trainer = get_trainer(config.trainer)
@@ -49,8 +50,8 @@ def train(config: Config) -> None:
 
     trainer.fit(lit_module, datamodule=data_module)
 
-    # if config.test and not config.debug:
-    #     trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
+    if config.test:
+        trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ class DataModule(pl.LightningDataModule):
 
         self.label_map = {l.split(",")[1]: int(l.split(",")[0]) for l in lines}
         self.num_classes = len(self.label_map)
+        self.class_names = [l.split(",")[1] for l in lines]
 
     def _full_dataset(self, transform: Optional[Callable]) -> ConcatImageFolderDataset:
         datasets = []

@@ -3,11 +3,13 @@ from functools import cached_property
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytorch_lightning as pl
+import torch
+import wandb
 from hydra.utils import instantiate
 from omegaconf import MISSING
-from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, nn
 from torch.nn import CrossEntropyLoss
+from torchmetrics import Accuracy
 
 
 @dataclass
@@ -23,6 +25,9 @@ class LitModule(pl.LightningModule):
         self.config = config
         self.model = model
 
+        self.train_acc = Accuracy()
+        self.valid_acc = Accuracy()
+
     def forward(self, x: Tensor) -> Tensor:
         return self.model(x)
 
@@ -35,6 +40,8 @@ class LitModule(pl.LightningModule):
         y_hat = self.model(x)
         loss = self.loss_fn(y_hat, y)
         self.log("train-loss", loss)
+        self.train_acc(y_hat, y)
+        self.log("train-acc", self.train_acc)
         return loss
 
     def validation_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> Tensor:
@@ -42,13 +49,37 @@ class LitModule(pl.LightningModule):
         y_hat = self.model(x)
         loss = self.loss_fn(y_hat, y)
         self.log("val-loss", loss)
+        self.valid_acc(y_hat, y)
+        self.log("val-acc", self.valid_acc)
         return loss
 
-    def validation_epoch_end(self, outputs: List[Dict[str, Tensor]]) -> None:
-        pass
+    def test_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> Dict[str, Any]:
+        x, y = batch
+        y_hat = self.model(x)
+        return {"pred": y_hat, "label": y}
 
-    def test_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> STEP_OUTPUT:
-        pass
+    def test_epoch_end(self, outputs: List[Dict[str, Any]]) -> None:
+
+        # prediction come in as [num batches, batch size, num classes]
+        # labels come in as [num batches, batch size]
+
+        preds = torch.stack([d["pred"] for d in outputs])
+        preds = torch.argmax(preds, dim=2)
+        preds = torch.flatten(preds).tolist()
+
+        labels = torch.stack([d["label"] for d in outputs])
+        labels = torch.flatten(labels).tolist()
+
+        wandb.log(
+            {
+                "class CM": wandb.plot.confusion_matrix(
+                    probs=None,
+                    y_true=labels,
+                    preds=preds,
+                    class_names=self.trainer.datamodule.class_names,
+                )
+            }
+        )
 
     def configure_optimizers(self):
         optimizer = instantiate(
