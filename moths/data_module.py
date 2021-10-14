@@ -59,7 +59,7 @@ class DataModule(pl.LightningDataModule):
         log.info(f"Using valid data {str(valid_data_path)} ...")
 
         with valid_data_path.open("r") as f:
-            self.valid_paths = set([p.strip() for p in f.readlines()])
+            self.valid_paths = {p.strip() for p in f.readlines()}
 
         label_map_path = resolve_config_path(self.config.label_map_file)
         log.info(f"Using label map {str(label_map_path)} ...")
