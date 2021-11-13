@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "moths"
+version = "0.1.0"
+description = "Classify the species, group, family and genus of moths."
+authors = ["Kay Lamerigts <k.lamerigts@gmail.com>, Lucas de Haas <lmdehaas@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typer = "^0.4.0"
+torch = "^1.10.0"
+torchvision = "^0.11.1"
+hydra-core = "^1.1.1"
+scikit-learn = "^1.0.1"
+wandb = "^0.12.6"
+pytorch-lightning = "^1.5.1"
+torchmetrics = "^0.6.0"
+
+[tool.poetry.dev-dependencies]
+black = "^21.10b0"
+isort = "^5.10.1"
+mypy = "^0.910"
+flake8 = "^4.0.1"
+pytest = "^6.2.5"
+ipython = "^7.29.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
