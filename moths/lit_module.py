@@ -59,18 +59,15 @@ class LitModule(pl.LightningModule):
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
 
-        # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
-
-        # loss_0 = F.cross_entropy(y_hat[0], y[0])
-        loss_1 = F.nll_loss(torch.softmax(y_hat[1], dim=1), y[1])
-
-        breakpoint()
-
-        return loss_1
-
+        loss_0 = F.cross_entropy(y_hat[0], y[0])
         loss_1 = F.cross_entropy(y_hat[1], y[1])
-        loss_2 = F.cross_entropy(y_hat[2], y[2])
-        loss_3 = F.cross_entropy(y_hat[3], y[3])
+        breakpoint()
+        return torch.mean(loss_0 + loss_1)
+
+
+
+        # loss_2 = F.cross_entropy(y_hat[2], y[2])
+        # loss_3 = F.cross_entropy(y_hat[3], y[3])
 
         breakpoint()
 
