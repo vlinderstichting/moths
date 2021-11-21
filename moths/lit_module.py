@@ -1,13 +1,12 @@
 from dataclasses import dataclass
-from functools import cached_property
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytorch_lightning as pl
 import torch
-import wandb
+import torch.nn.functional as F
 from hydra.utils import instantiate
 from omegaconf import MISSING
-from torch import Tensor, nn
+from torch import Tensor
 from torchmetrics import Metric
 
 from moths.label_hierarchy import LABELS
@@ -56,22 +55,20 @@ class LitModule(pl.LightningModule):
                 for metric in self.metrics[phase_name][label]:
                     metric.to("cuda")
 
-        self._loss_fn: nn.Module = instantiate(self.config.loss)
+        # self._loss_fn: nn.Module = instantiate(self.config.loss)
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
 
         # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
 
-        loss_0 = self._loss_fn(y_hat[0], y[0])
-        loss_1 = self._loss_fn(y_hat[1], y[1])
-        loss_2 = self._loss_fn(y_hat[2], y[2])
-        loss_3 = self._loss_fn(y_hat[3], y[3])
+        loss_0 = F.cross_entropy(y_hat[0], y[0])
+        loss_1 = F.cross_entropy(y_hat[1], y[1])
+        loss_2 = F.cross_entropy(y_hat[2], y[2])
+        loss_3 = F.cross_entropy(y_hat[3], y[3])
 
         breakpoint()
 
-
         return torch.mean(loss_0 + loss_1 + loss_2 + loss_3)
-
 
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         return self.model.forward(x)
