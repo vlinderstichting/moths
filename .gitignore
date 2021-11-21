@@ -133,3 +133,5 @@ dmypy.json
 
 # Hydra
 outputs/
+
+test_data/image_folder
