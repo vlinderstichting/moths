@@ -81,13 +81,14 @@ class LitModule(pl.LightningModule):
 
         self.log(f"{phase_name}-loss", loss)
 
-        # assume same order
-        for i, l in enumerate(LABELS):
-            for metric in self.metrics[phase_name][l]:
-                y_hat_discrete = torch.argmax(y_hat[i], dim=1)
-                metric_out = metric(y_hat_discrete, y[i])
-                log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
-                self.log(log_name, metric_out)
+        with torch.no_grad():
+            # assume same order
+            for i, l in enumerate(LABELS):
+                for metric in self.metrics[phase_name][l]:
+                    y_hat_discrete = torch.argmax(y_hat[i], dim=1)
+                    metric_out = metric(y_hat_discrete, y[i])
+                    log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
+                    self.log(log_name, metric_out)
 
         return loss
 
