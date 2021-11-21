@@ -1,0 +1,24 @@
+data_paths:
+  - /home/vlinderstichting/Data/data/nachtvlinderdata/IRecord/moths_images
+  - /home/vlinderstichting/Data/data/nachtvlinderdata/raam
+  - /home/vlinderstichting/Data/data/nachtvlinderdata/telmee/photos
+
+valid_path_file: /home/vlinderstichting/Data/moths/artifacts/valid-paths.txt
+label_hierarchy_file: /home/vlinderstichting/Data/moths/artifacts/label-hierarchy.csv
+
+test_fraction: 0.1
+batch_size: 64
+num_workers: 12
+pin_memory: true
+
+train_transforms:
+  - _target_: torchvision.transforms.RandomCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+
+
+test_transforms:
+  - _target_: torchvision.transforms.CenterCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+
