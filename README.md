@@ -50,3 +50,9 @@ from [StackOverflow](https://stackoverflow.com/a/45971199)):
 ```console
 find /path/to/data -type f -printf '%p/ %f\n' | sort -k2 | uniq -f1 --all-repeated=separate
 ```
+
+Note to developers: unfortunately, in the code we took the order as specified in the 
+family.csv file, ie. species, group, family, genus. But the hierarchy goes as 
+group > family > genus > species, where group is the largest and has the least classes, 
+and species is the smallest with the most classes.
+

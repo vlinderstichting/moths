@@ -1,0 +1,14 @@
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 0.003
+  weight_decay: 0.001
+
+loss:
+  _target_: torch.nn.CrossEntropyLoss
+
+train_metrics:
+  - _target_: torchmetrics.Accuracy
+
+
+test_metrics:
+  - _target_: torchmetrics.Accuracy

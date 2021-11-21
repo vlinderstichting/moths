@@ -1,0 +1,23 @@
+data_paths:
+  - test_data/source_a
+  - test_data/source_b
+
+valid_path_file: test_data/valid-paths.txt
+label_hierarchy_file: test_data/label-hierarchy.csv
+
+test_fraction: 0.25
+batch_size: 1
+num_workers: 0
+pin_memory: false
+
+train_transforms:
+  - _target_: torchvision.transforms.RandomCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+
+
+test_transforms:
+  - _target_: torchvision.transforms.CenterCrop
+    size: 224
+  - _target_: torchvision.transforms.ToTensor
+

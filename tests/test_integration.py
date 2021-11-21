@@ -53,20 +53,23 @@ def test_data_preparation(tmp_path):
     with tmp_invalid_data_path.open("r") as fp:
         assert len(fp.readlines()) == 0
 
+    initialize_config_dir(config_dir=HYDRA_CONFIG_PATH)
+    config = compose(
+        config_name="config",
+        overrides=[
+            f"data.valid_path_file={str(tmp_valid_data_path)}",
+            f"data.label_hierarchy_file={str(tmp_label_hierarchy_path)}",
+        ],
+    )
+    data_module = DataModule(config.data)
+    data_module.setup()
 
-#     initialize_config_dir(config_dir=HYDRA_CONFIG_PATH)
-#     config = compose(
-#         config_name="config",
-#         overrides=[
-#             f"data.valid_path_file={str(tmp_valid_data_path)}",
-#             f"data.label_hierarchy_file={str(tmp_label_hierarchy_path)}",
-#         ],
-#     )
-#     data_module = DataModule(config.data)
-#     data_module.setup()
-#
-#
-# def test_train():
-#     initialize_config_dir(config_dir=HYDRA_CONFIG_PATH)
-#     config = compose(config_name="config")
-#     train(cast(Config, config))
+    assert len(data_module.test_dataset) == 5
+    assert len(data_module.val_dataset) == 4
+    assert len(data_module.train_dataset) == 9
+
+
+def test_train():
+    initialize_config_dir(config_dir=HYDRA_CONFIG_PATH)
+    config = compose(config_name="config")
+    train(cast(Config, config))
