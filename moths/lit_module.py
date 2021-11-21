@@ -8,7 +8,7 @@ from hydra.utils import instantiate
 from omegaconf import MISSING
 from torch import Tensor
 from torchmetrics import Metric
-
+from torch import nn
 from moths.label_hierarchy import LABELS
 from moths.model import Model
 
@@ -55,9 +55,12 @@ class LitModule(pl.LightningModule):
                 for metric in self.metrics[phase_name][label]:
                     metric.to("cuda")
 
-        # self._loss_fn: nn.Module = instantiate(self.config.loss)
+        self._loss_fn: nn.Module = instantiate(self.config.loss)
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
+
+        losses = [self._loss_fn(y_hat[i], torch.clone(y[i])) for i in [0, 1, 2, 3]]
+        return torch.mean(torch.stack(losses))
 
         gt_1 = torch.clone(y[1])
 
