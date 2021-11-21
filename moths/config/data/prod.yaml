@@ -7,13 +7,17 @@ num_workers: 12
 pin_memory: true
 
 train_transforms:
-  - _target_: torchvision.transforms.RandomCrop
-    size: 224
+  - _target_: torchvision.transforms.Resize
+    size:
+      - 224
+      - 224
   - _target_: torchvision.transforms.ToTensor
 
 
 test_transforms:
-  - _target_: torchvision.transforms.CenterCrop
-    size: 224
+  - _target_: torchvision.transforms.Resize
+    size:
+      - 224
+      - 224
   - _target_: torchvision.transforms.ToTensor
 
