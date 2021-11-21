@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 import typer
+from joblib import Parallel, delayed
 from PIL import Image
 from tqdm import tqdm
 
@@ -23,9 +24,6 @@ def write_valid_paths(
         out_path: folder to write output to
         data_paths: input data folders with structure <path>/<class>/<image>
     """
-    valid_paths = set()
-    invalid_paths = set()
-
     paths_to_validate = []
 
     hierarchy = hierarchy_from_path(label_hierarchy_path)
@@ -49,8 +47,6 @@ def write_valid_paths(
             return file_path.name, False
         else:
             return file_path.name, True
-
-    from joblib import Parallel, delayed
 
     path_is_valids = Parallel(n_jobs=10)(
         delayed(_determine_valid)(p) for p in tqdm(paths_to_validate)
