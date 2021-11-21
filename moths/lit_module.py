@@ -65,6 +65,7 @@ class LitModule(pl.LightningModule):
         weights = torch.tensor([self.config.loss_weights]).long().to(self.device)
 
         def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
+            breakpoint()
             losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
             return torch.mean(losses)
 
@@ -81,14 +82,13 @@ class LitModule(pl.LightningModule):
 
         self.log(f"{phase_name}-loss", loss)
 
-        with torch.no_grad():
-            # assume same order
-            for i, l in enumerate(LABELS):
-                for metric in self.metrics[phase_name][l]:
-                    y_hat_discrete = torch.argmax(y_hat[i], dim=1)
-                    metric_out = metric(y_hat_discrete, y[i])
-                    log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
-                    self.log(log_name, metric_out)
+        # assume same order
+        for i, l in enumerate(LABELS):
+            for metric in self.metrics[phase_name][l]:
+                y_hat_discrete = torch.argmax(y_hat[i], dim=1)
+                metric_out = metric(y_hat_discrete, y[i])
+                log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
+                self.log(log_name, metric_out)
 
         return loss
 
