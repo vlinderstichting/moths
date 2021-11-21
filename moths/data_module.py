@@ -13,6 +13,7 @@ from torchvision.transforms import Compose
 from moths.config import resolve_config_path
 from moths.datasets import ConcatImageFolderDataset, LabelHierarchyImageFolder
 from moths.label_hierarchy import hierarchy_from_path
+from torchvision.datasets import ImageFolder
 
 log = logging.getLogger(__name__)
 
@@ -53,12 +54,10 @@ class DataModule(pl.LightningDataModule):
         label_hierarchy_path = resolve_config_path(self.config.label_hierarchy_file)
         self.label_hierarchy = hierarchy_from_path(label_hierarchy_path)
 
-        valid_data_path = resolve_config_path(self.config.valid_path_file)
-        with valid_data_path.open("r") as f:
-            self.valid_paths = {p.strip() for p in f.readlines()}
-
     def _full_dataset(self, transform: Optional[Callable]) -> ConcatImageFolderDataset:
         datasets = []
+
+        ds = ImageFolder()
 
         for data_path in self.config.data_paths:
             data_path = resolve_config_path(data_path)

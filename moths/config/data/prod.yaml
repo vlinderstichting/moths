@@ -1,9 +1,4 @@
-data_paths:
-  - /home/vlinderstichting/Data/data/nachtvlinderdata/IRecord/moths_images
-  - /home/vlinderstichting/Data/data/nachtvlinderdata/raam
-  - /home/vlinderstichting/Data/data/nachtvlinderdata/telmee/photos
-
-valid_path_file: /home/vlinderstichting/Data/moths/artifacts/valid-paths.txt
+data_path: /home/vlinderstichting/Data/moths/artifacts/image_folder
 label_hierarchy_file: /home/vlinderstichting/Data/moths/artifacts/label-hierarchy.csv
 
 test_fraction: 0.1
