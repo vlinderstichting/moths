@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import typer
 from PIL import Image
@@ -41,14 +41,32 @@ def write_valid_paths(
             for file_path in class_path.iterdir():
                 paths_to_validate.append(file_path.absolute())
 
-    for file_path in tqdm(paths_to_validate):
+    def _determine_valid(file_path) -> Tuple[Path, bool]:
         try:
             Image.open(file_path).convert("RGB")
         except Exception as e:
             print(f"[{str(file_path)}] {repr(e)}")
-            invalid_paths.add(file_path.name)
+            return file_path.name, False
         else:
-            valid_paths.add(file_path.name)
+            return file_path.name, True
+
+    from joblib import Parallel, delayed
+
+    path_is_valids = Parallel(n_jobs=10)(
+        delayed(_determine_valid)(p) for p in tqdm(paths_to_validate)
+    )
+
+    valid_paths = [p for p, is_valid in path_is_valids if is_valid]
+    invalid_paths = [p for p, is_valid in path_is_valids if not is_valid]
+
+    # for file_path in tqdm(paths_to_validate):
+    #     try:
+    #         Image.open(file_path).convert("RGB")
+    #     except Exception as e:
+    #         print(f"[{str(file_path)}] {repr(e)}")
+    #         invalid_paths.add(file_path.name)
+    #     else:
+    #         valid_paths.add(file_path.name)
 
     valid_paths_path = out_path / VALID_PATH_FILE_NAME
     invalid_paths_path = out_path / INVALID_PATH_FILE_NAME
