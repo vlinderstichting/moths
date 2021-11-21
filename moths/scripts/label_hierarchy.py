@@ -37,17 +37,10 @@ def write_label_hierarchy(
     hierarchy_map = {
         klass: [group, family, genus] for klass, _, group, family, genus in rows
     }
-
-    if not all(c in hierarchy_map for c in classes):
-        raise ValueError(
-            "Not sure what to do now? "
-            "Ignore seems the best options if this happens. "
-            "But then make sure to modify code to make this class invalid."
-        )
-
     hierarchy_map = {k: t for k, t in hierarchy_map.items() if k in classes}
 
-    classes = sorted(list(classes))
+    # Note: this ignores all classes not found in the family.csv
+    classes = sorted([c for c in classes if c in hierarchy_map])
 
     groups = sorted(list({g for g, _, _ in hierarchy_map.values()}))
     group_map = {g: i for i, g in enumerate(groups)}
