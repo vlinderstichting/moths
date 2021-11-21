@@ -56,27 +56,43 @@ class LitModule(pl.LightningModule):
                 for metric in self.metrics[phase_name][label]:
                     metric.to("cuda")
 
+        self._loss_fn: nn.Module = instantiate(self.config.loss)
+
+    def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
+
+        # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
+
+        loss_0 = self._loss_fn(y_hat[0], y[0])
+        loss_1 = self._loss_fn(y_hat[1], y[1])
+        loss_2 = self._loss_fn(y_hat[2], y[2])
+        loss_3 = self._loss_fn(y_hat[3], y[3])
+
+        breakpoint()
+
+
+        return torch.mean(loss_0 + loss_1 + loss_2 + loss_3)
+
+
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         return self.model.forward(x)
 
-    @cached_property
-    def loss_fn(self) -> Callable[[Tensor, Tensor], Tensor]:
-        _loss_fn: nn.Module = instantiate(self.config.loss)
-        weights = torch.tensor([self.config.loss_weights]).long().to(self.device)
-
-        def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
-            breakpoint()
-
-            # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
-
-            loss_0 = _loss_fn(y_hat[0], y[0])
-            loss_1 = _loss_fn(y_hat[1], y[1])
-            loss_2 = _loss_fn(y_hat[2], y[2])
-            loss_3 = _loss_fn(y_hat[3], y[3])
-
-            return torch.mean(loss_0 + loss_1 + loss_2 + loss_3)
-
-        return _out_fn
+    # @cached_property
+    # def loss_fn(self) -> Callable[[Tensor, Tensor], Tensor]:
+    #     weights = torch.tensor([self.config.loss_weights]).long().to(self.device)
+    #
+    #     def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
+    #         breakpoint()
+    #
+    #         # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
+    #
+    #         loss_0 = _loss_fn(y_hat[0], y[0])
+    #         loss_1 = _loss_fn(y_hat[1], y[1])
+    #         loss_2 = _loss_fn(y_hat[2], y[2])
+    #         loss_3 = _loss_fn(y_hat[3], y[3])
+    #
+    #         return torch.mean(loss_0 + loss_1 + loss_2 + loss_3)
+    #
+    #     return _out_fn
 
     def _transform_batch(self, batch: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
         x, y = batch
