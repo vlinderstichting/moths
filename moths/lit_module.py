@@ -64,7 +64,7 @@ class LitModule(pl.LightningModule):
         # loss_0 = F.cross_entropy(y_hat[0], y[0])
         loss_1 = F.nll_loss(torch.softmax(y_hat[1], dim=1), y[1])
 
-        # breakpoint()
+        breakpoint()
 
         return loss_1
 
