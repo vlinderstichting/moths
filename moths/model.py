@@ -53,8 +53,8 @@ class Model(nn.Module):
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         features = self.backbone(x)
 
-        group = self.fc_group(features)
         klass = self.fc_class(features)
+        group = self.fc_group(features)
         family = self.fc_family(features)
         genus = self.fc_genus(features)
 
