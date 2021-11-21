@@ -66,8 +66,15 @@ class LitModule(pl.LightningModule):
 
         def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
             breakpoint()
-            losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
-            return torch.mean(losses)
+
+            # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
+
+            loss_0 = _loss_fn(y_hat[0], y[0])
+            loss_1 = _loss_fn(y_hat[1], y[1])
+            loss_2 = _loss_fn(y_hat[2], y[2])
+            loss_3 = _loss_fn(y_hat[3], y[3])
+
+            return torch.mean(loss_0 + loss_1 + loss_2 + loss_3)
 
         return _out_fn
 
