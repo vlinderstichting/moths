@@ -5,6 +5,8 @@ import typer
 from PIL import Image
 from tqdm import tqdm
 
+from moths.label_hierarchy import hierarchy_from_path
+
 VALID_PATH_FILE_NAME = "valid-paths.txt"
 INVALID_PATH_FILE_NAME = "invalid-paths.txt"
 
@@ -12,7 +14,9 @@ valid_path_app = typer.Typer()
 
 
 @valid_path_app.command()
-def write_valid_paths(out_path: Path, data_paths: List[Path]) -> None:
+def write_valid_paths(
+    out_path: Path, label_hierarchy_path: Path, data_paths: List[Path]
+) -> None:
     """Creates file with valid and invalid paths for a list of data paths.
 
     Args:
@@ -24,11 +28,14 @@ def write_valid_paths(out_path: Path, data_paths: List[Path]) -> None:
 
     paths_to_validate = []
 
+    hierarchy = hierarchy_from_path(label_hierarchy_path)
+    classes = set(hierarchy.classes)
+
     for data_path in data_paths:
         for class_path in data_path.iterdir():
 
-            if not class_path.is_dir():
-                typer.echo(f"Ignoring {class_path}...")
+            if not class_path.is_dir() or class_path.name not in classes:
+                print(f"Ignoring {class_path}...")
                 continue
 
             for file_path in class_path.iterdir():
