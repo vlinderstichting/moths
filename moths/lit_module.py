@@ -50,8 +50,8 @@ class LitModule(pl.LightningModule):
             "test": {l: [instantiate(c) for c in config.test_metrics] for l in LABELS},
         }
 
-        for label in LABELS:
-            for phase_name in ["train", "val", "test"]:
+        for phase_name in ["train", "val", "test"]:
+            for label in LABELS:
                 for metric in self.metrics[phase_name][label]:
                     metric.to("cuda")
 
