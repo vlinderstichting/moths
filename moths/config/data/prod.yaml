@@ -3,7 +3,7 @@ label_hierarchy_file: /home/vlinderstichting/Data/moths/artifacts-2/label-hierar
 
 test_fraction: 0.1
 batch_size: 2
-num_workers: 12
+num_workers: 0
 pin_memory: true
 
 train_transforms:
