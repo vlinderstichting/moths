@@ -59,8 +59,10 @@ class LitModule(pl.LightningModule):
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
 
+        gt_1 = torch.clone(y[1])
+
         loss_0 = F.cross_entropy(y_hat[0], y[0])
-        loss_1 = F.cross_entropy(y_hat[1], y[1])
+        loss_1 = F.cross_entropy(y_hat[1], gt_1)
         breakpoint()
         return torch.mean(loss_0 + loss_1)
 
