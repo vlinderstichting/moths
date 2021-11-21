@@ -66,7 +66,7 @@ class LitModule(pl.LightningModule):
 
         def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
             losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
-            return torch.mean(losses * weights)
+            return torch.mean(losses)
 
         return _out_fn
 
