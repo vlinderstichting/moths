@@ -1,31 +1,29 @@
 import logging
 from dataclasses import dataclass
-from os.path import abspath
 from typing import Any, Callable, List, Optional
 
 import pytorch_lightning as pl
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
+from torch import tensor
 from torch.utils.data import DataLoader, Subset
+from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose
 
 from moths.config import resolve_config_path
-from moths.datasets import ConcatImageFolderDataset, LabelHierarchyImageFolder
 from moths.label_hierarchy import hierarchy_from_path
-from torchvision.datasets import ImageFolder
 
 log = logging.getLogger(__name__)
 
 
 @dataclass
 class DataConfig(DictConfig):
-    data_paths: List[str]
+    data_path: str
 
     train_transforms: List[Any]
     test_transforms: List[Any]
 
-    valid_path_file: str
     label_hierarchy_file: str
     test_fraction: float
 
@@ -54,32 +52,14 @@ class DataModule(pl.LightningDataModule):
         label_hierarchy_path = resolve_config_path(self.config.label_hierarchy_file)
         self.label_hierarchy = hierarchy_from_path(label_hierarchy_path)
 
-    def _full_dataset(self, transform: Optional[Callable]) -> ConcatImageFolderDataset:
-        datasets = []
-
-        ds = ImageFolder()
-
-        for data_path in self.config.data_paths:
-            data_path = resolve_config_path(data_path)
-            ds = LabelHierarchyImageFolder(
-                str(data_path),
-                hierarchy=self.label_hierarchy,
-                is_valid_file=lambda name: name in self.valid_paths,
-                transform=transform,
-            )
-            datasets.append(ds)
-            log.debug(
-                f"added image folder source from {str(data_path)} "
-                f"with {len(ds)} samples"
-            )
-
-        concat_ds = ConcatImageFolderDataset(datasets=datasets)
-        log.debug(
-            f"concatenated {len(datasets)} datasets into one with  "
-            f"with {len(concat_ds)} samples"
+    def _full_dataset(self, transform: Optional[Callable]) -> ImageFolder:
+        return ImageFolder(
+            self.config.data_path,
+            transform=transform,
+            target_transform=lambda x: tensor(
+                [x, *self.label_hierarchy.index_map[x]]
+            ).long(),
         )
-
-        return concat_ds
 
     def setup(self, stage: Optional[str] = None):
         # setup the full dataset twice, because we need different transforms
