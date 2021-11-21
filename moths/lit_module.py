@@ -58,7 +58,6 @@ class LitModule(pl.LightningModule):
         self._loss_fn: nn.Module = instantiate(self.config.loss)
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
-
         losses = [self._loss_fn(y_hat[i], torch.clone(y[i])) for i in [0, 1, 2, 3]]
         return torch.mean(torch.stack(losses))
 
