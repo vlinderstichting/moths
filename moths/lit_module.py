@@ -65,6 +65,7 @@ class LitModule(pl.LightningModule):
         weights = torch.tensor([self.config.loss_weights]).long().to(self.device)
 
         def _out_fn(y_hat: Tensor, y: Tensor) -> Tensor:
+            breakpoint()
             losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in range(len(LABELS))])
             return torch.mean(losses * weights)
 
