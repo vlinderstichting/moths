@@ -10,7 +10,7 @@ instance:
   fast_dev_run: False
   max_epochs: 1
   min_epochs: 1
-  log_every_n_steps: 5
+  log_every_n_steps: 150
   precision: 32
   num_sanity_val_steps: 2
   profiler: null
