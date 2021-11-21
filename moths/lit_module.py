@@ -62,6 +62,9 @@ class LitModule(pl.LightningModule):
         # losses = torch.stack([_loss_fn(y_hat[i], y[i]) for i in [0, 2, 3]])
 
         loss_0 = F.cross_entropy(y_hat[0], y[0])
+        loss_1 = F.cross_entropy(y_hat[1], y[1])
+
+        breakpoint()
 
         return loss_0
 
