@@ -25,8 +25,7 @@ class LitConfig:
     loss: Any = MISSING
     loss_weights: Tuple[float, float, float, float] = (1, 1, 1, 1)
 
-    train_metrics: List[Any] = MISSING
-    test_metrics: List[Any] = MISSING
+    metrics: List[Any] = MISSING
 
 
 class LitModule(pl.LightningModule):
@@ -43,11 +42,9 @@ class LitModule(pl.LightningModule):
         # note same metrics for val and test
         # set, level, metrics
         self.metrics: Dict[str, Dict[str, List[Metric]]] = {
-            "train": {
-                l: [instantiate(c) for c in config.train_metrics] for l in LABELS
-            },
-            "val": {l: [instantiate(c) for c in config.test_metrics] for l in LABELS},
-            "test": {l: [instantiate(c) for c in config.test_metrics] for l in LABELS},
+            "train": {l: [instantiate(c) for c in config.metrics] for l in LABELS},
+            "val": {l: [instantiate(c) for c in config.metrics] for l in LABELS},
+            "test": {l: [instantiate(c) for c in config.metrics] for l in LABELS},
         }
 
         for phase_name in ["train", "val", "test"]:
@@ -67,8 +64,6 @@ class LitModule(pl.LightningModule):
         loss_1 = F.cross_entropy(y_hat[1], gt_1)
         breakpoint()
         return torch.mean(loss_0 + loss_1)
-
-
 
         # loss_2 = F.cross_entropy(y_hat[2], y[2])
         # loss_3 = F.cross_entropy(y_hat[3], y[3])
