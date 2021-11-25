@@ -114,6 +114,7 @@ class LitModule(pl.LightningModule):
                 self.log(log_name, log_value)
 
     def _log_confusion_matrix(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+        return
         for label in LABELS:
             preds = torch.concat([batch[label][0] for batch in outputs]).detach().cpu().numpy()
             targets = torch.concat([batch[label][1] for batch in outputs]).detach().cpu().numpy()
