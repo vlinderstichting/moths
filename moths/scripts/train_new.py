@@ -22,7 +22,7 @@ class Config(DictConfig):
 
     seed: int = 31415
     debug: bool = False
-    test: bool = True
+    test: bool = False
 
 
 cs = ConfigStore.instance()
