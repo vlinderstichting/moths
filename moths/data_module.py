@@ -50,9 +50,18 @@ class DataModule(pl.LightningDataModule):
         class_counts = {p.name: len(list(p.iterdir())) for p in resolve_config_path(config.data_path).iterdir()}
         classes = set(class_counts.keys())
         classes_to_trim = {c for c, n in class_counts.items() if n < config.min_samples}
+        log.info(f"Found {len(classes)} classes. {len(classes_to_trim)} have less than {config.min_samples} samples.")
 
         label_hierarchy_path = resolve_config_path(config.label_hierarchy_file)
         self.label_hierarchy = from_file(label_hierarchy_path, classes, classes_to_trim)
+
+        log.info(
+            f"Final class count: "
+            f"{len(self.label_hierarchy.classes) - 1} "
+            f"{len(self.label_hierarchy.groups) - 1} "
+            f"{len(self.label_hierarchy.families) - 1} "
+            f"{len(self.label_hierarchy.genuses) - 1}."
+        )
 
     def _full_dataset(self, transform: Optional[Callable]) -> ImageFolder:
         return LabelHierarchyImageFolder(

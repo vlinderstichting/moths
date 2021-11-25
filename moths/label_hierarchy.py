@@ -1,7 +1,10 @@
 import csv
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
+
+log = logging.getLogger(__name__)
 
 LABELS = ["species", "group", "family", "genus"]
 OTHER_NAME = "Other"
@@ -48,6 +51,8 @@ def from_file(path: Path, classes: Set[str], trim: Set[str]) -> LabelHierarchy:
         for klass, _, group, family, genus in rows
         if klass in classes and klass not in trim
     }
+
+    log.info(f"Cannot find {len(classes - trim) - len(hierarchy_map)} classes in family data.")
 
     # in: index to name
     # ni: name to index
