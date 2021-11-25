@@ -8,7 +8,7 @@ instance:
   log_gpu_memory: null
   overfit_batches: 0.0
   fast_dev_run: False
-  max_epochs: 1
+  max_epochs: 20
   min_epochs: 1
   log_every_n_steps: 150
   precision: 32
