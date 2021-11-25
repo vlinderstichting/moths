@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Counter
 
 import pytorch_lightning as pl
 from hydra.utils import instantiate
@@ -12,7 +12,8 @@ from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose
 
 from moths.config import resolve_config_path
-from moths.label_hierarchy import hierarchy_from_path
+from moths.datasets import LabelHierarchyImageFolder
+from moths.label_hierarchy import from_file
 
 log = logging.getLogger(__name__)
 
@@ -32,14 +33,11 @@ class DataConfig(DictConfig):
     num_workers: int
     pin_memory: bool
 
+    min_samples: int
+
 
 class DataModule(pl.LightningDataModule):
     def __init__(self, config: DataConfig):
-        """
-
-        Args:
-            config:
-        """
         super().__init__()
         self.config = config
 
@@ -49,22 +47,25 @@ class DataModule(pl.LightningDataModule):
         test_tfs_instantiated = [instantiate(c) for c in config.test_transforms]
         self._test_transforms = Compose(test_tfs_instantiated)
 
-        label_hierarchy_path = resolve_config_path(self.config.label_hierarchy_file)
-        self.label_hierarchy = hierarchy_from_path(label_hierarchy_path)
+        class_counts = {p.name: len(list(p.iterdir())) for p in resolve_config_path(config.data_path).iterdir()}
+        classes = set(class_counts.keys())
+        classes_to_trim = {c for c, n in class_counts.items() if n < config.min_samples}
+
+        label_hierarchy_path = resolve_config_path(config.label_hierarchy_file)
+        self.label_hierarchy = from_file(label_hierarchy_path, classes, classes_to_trim)
 
     def _full_dataset(self, transform: Optional[Callable]) -> ImageFolder:
-        return ImageFolder(
-            self.config.data_path,
+        return LabelHierarchyImageFolder(
+            resolve_config_path(self.config.data_path),
+            hierarchy=self.label_hierarchy,
             transform=transform,
-            target_transform=lambda x: tensor(
-                [x, *self.label_hierarchy.index_map[x]]
-            ).long(),
         )
 
     def setup(self, stage: Optional[str] = None):
         # setup the full dataset twice, because we need different transforms
         # very little additional IO since the datasets are lazy, and during init they
         # only scan for the file names
+        # TODO: are they deterministic in class_to_idx mapping??
         full_train_dataset = self._full_dataset(self._train_transforms)
         full_val_test_dataset = self._full_dataset(self._test_transforms)
 

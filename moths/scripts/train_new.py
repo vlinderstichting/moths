@@ -36,7 +36,7 @@ def train(config: Config) -> None:
 
     data_module = DataModule(config.data)
     model = Model(config.model, data_module.label_hierarchy)
-    lit_module = LitModule(config.lit, model)
+    lit_module = LitModule(config.lit, model, data_module.label_hierarchy)
     trainer = get_trainer(config.trainer)
 
     trainer.fit(lit_module, datamodule=data_module)

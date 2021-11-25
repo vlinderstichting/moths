@@ -1,18 +1,16 @@
-data_paths:
-  - test_data/source_a
-  - test_data/source_b
-
-valid_path_file: test_data/valid-paths.txt
-label_hierarchy_file: test_data/label-hierarchy.csv
+data_path: test_data/image_folder
+label_hierarchy_file: data/family.csv
 
 test_fraction: 0.25
-batch_size: 1
-num_workers: 0
+batch_size: 4
+num_workers: 1
 pin_memory: false
+min_samples: 4
 
 train_transforms:
   - _target_: torchvision.transforms.RandomCrop
     size: 224
+    pad_if_needed: true
   - _target_: torchvision.transforms.ToTensor
 
 

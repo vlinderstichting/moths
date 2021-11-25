@@ -18,8 +18,12 @@ def prepare_config(config: DictConfig) -> None:
     if config.debug:
         # config.trainer.instance.fast_dev_run = True
         # config.trainer.instance.gpus = 0
-        config.data.pin_memory = False
         config.data.num_workers = 0
+        # remove wandb
+
+    if config.trainer.instance.gpus == 0:
+        config.lit.device = "cpu"
+        config.data.pin_memory = False
 
     OmegaConf.set_struct(config, True)
 
