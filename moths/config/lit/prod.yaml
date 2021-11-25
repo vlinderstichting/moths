@@ -1,3 +1,5 @@
+device: "cuda:0"
+
 optimizer:
   _target_: torch.optim.Adam
   lr: 0.003

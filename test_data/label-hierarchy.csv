@@ -1,4 +1,6 @@
-0,Cydia microgrammana,0,micro,0,Tortricidae,0,Cydia
-1,Pammene ochsenheimeriana,0,micro,0,Tortricidae,1,Pammene
-2,Pammene rhediella,0,micro,0,Tortricidae,1,Pammene
-3,Strophedra nitidana,0,micro,0,Tortricidae,2,Strophedra
+0,Amata phegea,0,macro,0,Erebidae,0,Amata
+1,Arctia villica,0,macro,0,Erebidae,1,Arctia
+2,Cydia microgrammana,1,micro,1,Tortricidae,2,Cydia
+3,Pammene ochsenheimeriana,1,micro,1,Tortricidae,3,Pammene
+4,Pammene rhediella,1,micro,1,Tortricidae,3,Pammene
+5,Strophedra nitidana,1,micro,1,Tortricidae,4,Strophedra
