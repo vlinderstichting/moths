@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
 from omegaconf import MISSING, DictConfig
 from torch import Tensor, nn
 from torchmetrics import Metric
-from sklearn.metrics import classification_report
+
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
-from moths.metrics import log_wandb_confusion_matrix
 from moths.model import Model
 
 LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C) x targets (N,)
@@ -21,14 +19,14 @@ BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for los
 class LitConfig:
     device: str
 
-    optimizer: Any = MISSING
-    scheduler: Optional[Any] = None
-    scheduler_interval: str = "step"
+    optimizer: Any
+    scheduler: Optional[Any]
+    scheduler_interval: str
 
-    loss: Any = MISSING
-    loss_weights: Tuple[float, float, float, float] = (1, 1, 1, 1)
+    loss: Any
+    loss_weights: Tuple[float, float, float, float]
 
-    metrics: List[Any] = MISSING
+    metrics: List[Any]
 
 
 class LitModule(pl.LightningModule):
@@ -75,10 +73,13 @@ class LitModule(pl.LightningModule):
         x, y = batch
         return x, y.T
 
-    def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str) -> BATCH_OUTPUT:
+    def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str)-> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
         y_hat = self.model(x)
         loss = self.loss_fn(y_hat, y)
+
+        if phase_name != "train":
+            return {"loss": loss}
 
         self.log(f"{phase_name}-loss", loss)
 
@@ -113,21 +114,14 @@ class LitModule(pl.LightningModule):
                 log_name = f"epoch-{phase_name}-{l}-{metric.__class__.__name__.lower()}"
                 self.log(log_name, log_value)
 
-    def _log_confusion_matrix(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
-        return
-        for label in LABELS:
-            preds = torch.concat([batch[label][0] for batch in outputs]).detach().cpu().numpy()
-            targets = torch.concat([batch[label][1] for batch in outputs]).detach().cpu().numpy()
+    def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+        preds = torch.concat([batch["species"][0] for batch in outputs]).detach().cpu().numpy()
+        targets = torch.concat([batch["species"][1] for batch in outputs]).detach().cpu().numpy()
 
-            # print(
-            #     classification_report(
-            #         targets.detach().cpu().numpy(),
-            #         np.argmax(preds.detach().cpu().numpy(), axis=1),
-            #         target_names=get_classes_by_label(self.label_hierarchy, label),
-            #     )
-            # )
+        # get
+        north_star = None
+        self.log(f"{phase_name}-north-star", north_star)
 
-            log_wandb_confusion_matrix(phase_name, get_classes_by_label(self.label_hierarchy, label), preds, targets)
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")
@@ -137,7 +131,7 @@ class LitModule(pl.LightningModule):
 
     def training_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("train")
-        self._log_confusion_matrix("train", outputs)
+        self._log_north_star("train", outputs)
 
     def on_validation_epoch_start(self):
         self._clear_metrics("val")
@@ -147,7 +141,7 @@ class LitModule(pl.LightningModule):
 
     def validation_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("val")
-        self._log_confusion_matrix("val", outputs)
+        self._log_north_star("val", outputs)
 
     def on_test_epoch_start(self):
         self._clear_metrics("test")
@@ -157,7 +151,7 @@ class LitModule(pl.LightningModule):
 
     def test_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("test")
-        self._log_confusion_matrix("test", outputs)
+        self._log_north_star("test", outputs)
 
     def configure_optimizers(self):
         optimizer = instantiate(self.config.optimizer, params=self.model.parameters(), _convert_="partial")

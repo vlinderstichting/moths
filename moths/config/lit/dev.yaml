@@ -17,7 +17,3 @@ metrics:
     average: macro
   - _target_: torchmetrics.F1
     average: macro
-#  - _target_: torchmetrics.AUROC
-#    average: macro
-#  - _target_: torchmetrics.AveragePrecision
-#    average: macro
