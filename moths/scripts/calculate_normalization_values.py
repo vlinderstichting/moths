@@ -22,7 +22,7 @@ def calculate_normalization_values(data_path: Path) -> None:
         return img.mean(axis=(0, 1)), img.std(axis=(0,1))
 
     paths = [p for c in data_path.iterdir() for p in c.iterdir()]
-    stats = Parallel(n_jobs=2)(delayed(_calc)(p) for p in tqdm(paths))
+    stats = Parallel(n_jobs=24)(delayed(_calc)(p) for p in tqdm(paths))
 
     print(np.array(stats).mean(axis=0))
 
