@@ -15,10 +15,10 @@ from moths.trainer import TrainerConfig, get_trainer
 
 @dataclass
 class Config(DictConfig):
-    data: DataConfig = MISSING
-    model: ModelConfig = MISSING
-    lit: LitConfig = MISSING
-    trainer: TrainerConfig = MISSING
+    data: DataConfig
+    model: ModelConfig
+    lit: LitConfig
+    trainer: TrainerConfig
 
     seed: int = 31415
     debug: bool = False

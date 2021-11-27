@@ -1,17 +1,13 @@
 from pathlib import Path
-from typing import List, Tuple
+from typing import Tuple
 
+import numpy as np
 import typer
-from PIL.ImageStat import Stat
 from joblib import Parallel, delayed
 from PIL import Image
 from tqdm import tqdm
 
-import numpy as np
-
 norm_values_app = typer.Typer()
-
-OUTPUT_FOLDER_NAME = "image_folder"
 
 
 @norm_values_app.command()

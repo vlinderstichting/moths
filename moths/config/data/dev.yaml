@@ -12,10 +12,28 @@ train_transforms:
     size: 224
     pad_if_needed: true
   - _target_: torchvision.transforms.ToTensor
+  - _target_: torchvision.transforms.Normalize
+    mean:
+      - 136.24
+      - 133.32
+      - 116.16
+    std:
+      - 46.18
+      - 46.70
+      - 48.89
 
 
 test_transforms:
   - _target_: torchvision.transforms.CenterCrop
     size: 224
   - _target_: torchvision.transforms.ToTensor
+  - _target_: torchvision.transforms.Normalize
+    mean:
+      - 136.24
+      - 133.32
+      - 116.16
+    std:
+      - 46.18
+      - 46.70
+      - 48.89
 

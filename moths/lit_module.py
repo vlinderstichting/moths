@@ -4,14 +4,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
-from omegaconf import MISSING, DictConfig
+from omegaconf import DictConfig
 from torch import Tensor, nn
 from torchmetrics import Metric
 
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
 from moths.model import Model
 
-LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C) x targets (N,)
+LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
 BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for loss
 
 
@@ -19,14 +19,14 @@ BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for los
 class LitConfig:
     device: str
 
-    optimizer: Any
-    scheduler: Optional[Any]
-    scheduler_interval: str
-
     loss: Any
     loss_weights: Tuple[float, float, float, float]
 
     metrics: List[Any]
+
+    optimizer: Any
+    scheduler: Optional[Any] = None
+    scheduler_interval: str = "None"
 
 
 class LitModule(pl.LightningModule):
@@ -78,9 +78,6 @@ class LitModule(pl.LightningModule):
         y_hat = self.model(x)
         loss = self.loss_fn(y_hat, y)
 
-        if phase_name != "train":
-            return {"loss": loss}
-
         self.log(f"{phase_name}-loss", loss)
 
         # assume same order
@@ -92,7 +89,9 @@ class LitModule(pl.LightningModule):
                 if log_value is None:
                     continue
                 log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
-                self.log(log_name, log_value)
+
+                if phase_name == "train":
+                    self.log(log_name, log_value)
 
         out = {l: (y_hat[i].detach(), y[i]) for i, l in enumerate(LABELS)}
         out["loss"] = loss
@@ -115,6 +114,7 @@ class LitModule(pl.LightningModule):
                 self.log(log_name, log_value)
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+        return
         preds = torch.concat([batch["species"][0] for batch in outputs]).detach().cpu().numpy()
         targets = torch.concat([batch["species"][1] for batch in outputs]).detach().cpu().numpy()
 

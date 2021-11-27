@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Any
 
+import numpy as np
 from torch import tensor, Tensor
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import find_classes
@@ -45,3 +46,27 @@ class LabelHierarchyImageFolder(ImageFolder):
         # use the pre determined class mapping, if cannot find assign it to other (0)
         class_to_idx = {c: (self.class_to_idx_[c] if c in self.class_to_idx_ else 0) for c in classes}
         return classes, class_to_idx
+
+
+class MixUpDataset(LabelHierarchyImageFolder):
+    def __init__(
+        self,
+        root: Path,
+        hierarchy: LabelHierarchy,
+        alpha: float,
+        probability: float,
+        transform: Optional[Callable] = None,
+    ) -> None:
+        super().__init__(root, hierarchy, transform)
+        self.alpha = alpha
+        self.probability = probability
+
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        sample_a, target_a = super().__getitem__(index)
+
+        if np.random.rand() > self.probability:
+            return sample_a, target_a
+
+        other_index = np.random.randint(len(self))
+        sample_b, target_b = super().__getitem__(other_index)
+        

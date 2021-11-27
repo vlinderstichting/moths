@@ -5,7 +5,6 @@ from hydra import compose, initialize_config_dir
 from typer.testing import CliRunner
 
 from moths.data_module import DataModule
-from moths.label_hierarchy import hierarchy_from_path
 from moths.scripts.label_hierarchy import LABEL_HIERARCHY_FILE_NAME, label_hierarchy_app
 from moths.scripts.train import Config, train
 from moths.scripts.valid_data_paths import (
