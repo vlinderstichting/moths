@@ -9,7 +9,7 @@ instance:
   overfit_batches: 0.0
   fast_dev_run: False
   max_epochs: 20
-  min_epochs: 3
+  min_epochs: 4
   log_every_n_steps: 150
   precision: 32
   num_sanity_val_steps: 2
@@ -48,5 +48,5 @@ callbacks:
     log_momentum: True
   - _target_: pytorch_lightning.callbacks.EarlyStopping
     monitor: "epoch-val-loss"
-    patience: 1
+    patience: 2
     check_on_train_epoch_end: false
