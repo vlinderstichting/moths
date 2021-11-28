@@ -1,6 +1,7 @@
-from dataclasses import MISSING, dataclass
+from dataclasses import dataclass
 
 import hydra
+import torch
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
@@ -54,4 +55,5 @@ def train(config: Config) -> None:
 
 
 if __name__ == "__main__":
+    torch.backends.cudnn.benchmark = True
     train()
