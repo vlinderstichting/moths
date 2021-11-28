@@ -1,13 +1,13 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Counter
+from typing import Any, Callable, List, Optional
 
+import numpy as np
 import pytorch_lightning as pl
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
-from torch import tensor
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import Compose
 
@@ -34,6 +34,7 @@ class DataConfig(DictConfig):
     pin_memory: bool
 
     min_samples: int
+    weighted_sampling: bool
 
 
 class DataModule(pl.LightningDataModule):
@@ -74,7 +75,6 @@ class DataModule(pl.LightningDataModule):
         # setup the full dataset twice, because we need different transforms
         # very little additional IO since the datasets are lazy, and during init they
         # only scan for the file names
-        # TODO: are they deterministic in class_to_idx mapping??
         full_train_dataset = self._full_dataset(self._train_transforms)
         full_val_test_dataset = self._full_dataset(self._test_transforms)
 
@@ -105,6 +105,16 @@ class DataModule(pl.LightningDataModule):
             stratify=val_test_targets,
         )
 
+        if self.config.weighted_sampling:
+            train_targets = [full_targets[x] for x in train_indices]
+            targets_unique, targets_counts = np.unique(train_targets, return_counts=True)
+            targets_weight_per_target = 1 / (targets_counts / targets_counts.sum())
+            target_weight_map = {targets_unique[i]: targets_weight_per_target[i] for i in range(len(targets_unique))}
+            target_weights = [target_weight_map[t] for t in train_targets]
+            self.train_sampler = WeightedRandomSampler(target_weights, len(targets_unique), replacement=True)
+        else:
+            self.train_sampler = None
+
         # create subsets (from the correct full datasets) with the indices
         self.train_dataset = Subset(full_train_dataset, train_indices)
         self.val_dataset = Subset(full_val_test_dataset, val_indices)
@@ -124,6 +134,7 @@ class DataModule(pl.LightningDataModule):
             pin_memory=self.config.pin_memory,
             shuffle=True,
             drop_last=True,
+            sampler=self.train_sampler,
         )
 
     def val_dataloader(self) -> DataLoader:
