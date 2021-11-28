@@ -5,7 +5,7 @@ optimizer:
   lr: 0.0003
   weight_decay: 0.0001
 
-unfreeze_backbone_epoch: 3
+unfreeze_backbone_epoch: 0
 
 loss:
   _target_: torch.nn.CrossEntropyLoss
