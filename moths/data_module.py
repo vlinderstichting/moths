@@ -48,10 +48,15 @@ class DataModule(pl.LightningDataModule):
         test_tfs_instantiated = [instantiate(c) for c in config.test_transforms]
         self._test_transforms = Compose(test_tfs_instantiated)
 
-        class_counts = {p.name: len(list(p.iterdir())) for p in resolve_config_path(config.data_path).iterdir()}
+        class_counts = {
+            p.name: len(list(p.iterdir()))
+            for p in resolve_config_path(config.data_path).iterdir()
+        }
         classes = set(class_counts.keys())
         classes_to_trim = {c for c, n in class_counts.items() if n < config.min_samples}
-        log.info(f"Found {len(classes)} classes. {len(classes_to_trim)} have less than {config.min_samples} samples.")
+        log.info(
+            f"Found {len(classes)} classes. {len(classes_to_trim)} have less than {config.min_samples} samples."
+        )
 
         label_hierarchy_path = resolve_config_path(config.label_hierarchy_file)
         self.label_hierarchy = from_file(label_hierarchy_path, classes, classes_to_trim)
@@ -107,11 +112,18 @@ class DataModule(pl.LightningDataModule):
 
         if self.config.weighted_sampling:
             train_targets = [full_targets[x] for x in train_indices]
-            targets_unique, targets_counts = np.unique(train_targets, return_counts=True)
+            targets_unique, targets_counts = np.unique(
+                train_targets, return_counts=True
+            )
             targets_weight_per_target = 1 / (targets_counts / targets_counts.sum())
-            target_weight_map = {targets_unique[i]: targets_weight_per_target[i] for i in range(len(targets_unique))}
+            target_weight_map = {
+                targets_unique[i]: targets_weight_per_target[i]
+                for i in range(len(targets_unique))
+            }
             target_weights = [target_weight_map[t] for t in train_targets]
-            self.train_sampler = WeightedRandomSampler(target_weights, len(targets_unique), replacement=True)
+            self.train_sampler = WeightedRandomSampler(
+                target_weights, len(targets_unique), replacement=True
+            )
         else:
             self.train_sampler = None
 

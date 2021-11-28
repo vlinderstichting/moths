@@ -12,7 +12,9 @@ norm_values_app = typer.Typer()
 
 @norm_values_app.command()
 def calculate_normalization_values(data_path: Path) -> None:
-    def _calc(file_path: Path) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+    def _calc(
+        file_path: Path,
+    ) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
         img = np.array(Image.open(file_path).convert("RGB"))
         return img.mean(axis=(0, 1)), img.var(axis=(0, 1))
 

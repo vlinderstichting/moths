@@ -4,7 +4,9 @@ import wandb
 from torch import Tensor
 
 
-def log_wandb_confusion_matrix(phase_name: str, class_names: List[str], preds: Tensor, targets: Tensor) -> None:
+def log_wandb_confusion_matrix(
+    phase_name: str, class_names: List[str], preds: Tensor, targets: Tensor
+) -> None:
     wandb.log(
         {
             f"{phase_name}-confusion-matrix": wandb.plot.confusion_matrix(

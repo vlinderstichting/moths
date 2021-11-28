@@ -106,7 +106,6 @@ def test_model(default_label_hierarchy):
         ],
     )
 
-
     model = Model(config.model, default_label_hierarchy)
     pass
 

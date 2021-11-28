@@ -35,7 +35,9 @@ class LitModule(pl.LightningModule):
     scored, namely; species, group, family, and genus, in that order.
     """
 
-    def __init__(self, config: LitConfig, model: Model, label_hierarchy: LabelHierarchy) -> None:
+    def __init__(
+        self, config: LitConfig, model: Model, label_hierarchy: LabelHierarchy
+    ) -> None:
         super(LitModule, self).__init__()
         self.config = config
         self.model = model
@@ -48,9 +50,15 @@ class LitModule(pl.LightningModule):
         # note same metrics for val and test
         # set, level, metrics
         self.metrics: Dict[str, Dict[str, List[Metric]]] = {
-            "train": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
-            "val": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
-            "test": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
+            "train": {
+                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
+            },
+            "val": {
+                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
+            },
+            "test": {
+                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
+            },
         }
 
         for phase_name in ["train", "val", "test"]:
@@ -59,7 +67,9 @@ class LitModule(pl.LightningModule):
                     metric.to(self.config.device)
 
         self._loss_fn: nn.Module = instantiate(self.config.loss)
-        self._loss_weights = torch.tensor([self.config.loss_weights]).long().to(self.config.device)
+        self._loss_weights = (
+            torch.tensor([self.config.loss_weights]).long().to(self.config.device)
+        )
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
@@ -73,7 +83,7 @@ class LitModule(pl.LightningModule):
         x, y = batch
         return x, y.T
 
-    def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str)-> BATCH_OUTPUT:
+    def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
         y_hat = self.model(x)
         loss = self.loss_fn(y_hat, y)
@@ -115,18 +125,29 @@ class LitModule(pl.LightningModule):
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
         return
-        preds = torch.concat([batch["species"][0] for batch in outputs]).detach().cpu().numpy()
-        targets = torch.concat([batch["species"][1] for batch in outputs]).detach().cpu().numpy()
+        preds = (
+            torch.concat([batch["species"][0] for batch in outputs])
+            .detach()
+            .cpu()
+            .numpy()
+        )
+        targets = (
+            torch.concat([batch["species"][1] for batch in outputs])
+            .detach()
+            .cpu()
+            .numpy()
+        )
 
         # get
         north_star = None
         self.log(f"{phase_name}-north-star", north_star)
 
-
     def on_train_epoch_start(self):
         self._clear_metrics("train")
 
-    def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> BATCH_OUTPUT:
+    def training_step(
+        self, batch: Tuple[Tensor, Tensor], batch_idx: int
+    ) -> BATCH_OUTPUT:
         return self._step(batch, "train")
 
     def training_epoch_end(self, outputs: List[BATCH_OUTPUT]):
@@ -136,7 +157,9 @@ class LitModule(pl.LightningModule):
     def on_validation_epoch_start(self):
         self._clear_metrics("val")
 
-    def validation_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> BATCH_OUTPUT:
+    def validation_step(
+        self, batch: Tuple[Tensor, Tensor], batch_idx: int
+    ) -> BATCH_OUTPUT:
         return self._step(batch, "val")
 
     def validation_epoch_end(self, outputs: List[BATCH_OUTPUT]):
@@ -154,12 +177,16 @@ class LitModule(pl.LightningModule):
         self._log_north_star("test", outputs)
 
     def configure_optimizers(self):
-        optimizer = instantiate(self.config.optimizer, params=self.model.parameters(), _convert_="partial")
+        optimizer = instantiate(
+            self.config.optimizer, params=self.model.parameters(), _convert_="partial"
+        )
 
         if self.config.scheduler is None:
             return optimizer
 
-        scheduler = instantiate(self.config.scheduler, optimizer=optimizer, _convert_="partial")
+        scheduler = instantiate(
+            self.config.scheduler, optimizer=optimizer, _convert_="partial"
+        )
 
         return {
             "optimizer": optimizer,

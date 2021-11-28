@@ -52,7 +52,9 @@ def from_file(path: Path, classes: Set[str], trim: Set[str]) -> LabelHierarchy:
         if klass in classes and klass not in trim
     }
 
-    log.info(f"Cannot find {len(classes - trim) - len(hierarchy_map)} classes in family data.")
+    log.info(
+        f"Cannot find {len(classes - trim) - len(hierarchy_map)} classes in family data."
+    )
 
     # in: index to name
     # ni: name to index
@@ -70,7 +72,9 @@ def from_file(path: Path, classes: Set[str], trim: Set[str]) -> LabelHierarchy:
     genus_ni = {g: i for i, g in enumerate(genus_in)}
 
     index_map: Dict[int, Tuple[int, int, int]] = {0: (0, 0, 0)}
-    name_map: Dict[str, Tuple[str, str, str]] = {OTHER_NAME: (OTHER_NAME, OTHER_NAME, OTHER_NAME)}
+    name_map: Dict[str, Tuple[str, str, str]] = {
+        OTHER_NAME: (OTHER_NAME, OTHER_NAME, OTHER_NAME)
+    }
 
     for class_n, (group_n, family_n, genus_n) in hierarchy_map.items():
         class_i = class_ni[class_n]

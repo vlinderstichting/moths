@@ -43,13 +43,17 @@ def write_valid_paths(out_path: Path, data_paths: List[Path]) -> None:
         else:
             return file_path, True
 
-    path_is_valids = Parallel(n_jobs=10)(delayed(_determine_valid)(p) for p in tqdm(paths_to_validate))
+    path_is_valids = Parallel(n_jobs=10)(
+        delayed(_determine_valid)(p) for p in tqdm(paths_to_validate)
+    )
     valid_paths = [p for p, is_valid in path_is_valids if is_valid]
 
     source_out_path = (out_path / OUTPUT_FOLDER_NAME).absolute()
     for i, img_path in enumerate(valid_paths):
         class_name = img_path.parent.name
-        symbolic_link_path = (source_out_path / class_name / f"{i:07}").with_suffix(img_path.suffix)
+        symbolic_link_path = (source_out_path / class_name / f"{i:07}").with_suffix(
+            img_path.suffix
+        )
         symbolic_link_path.parent.mkdir(exist_ok=True, parents=True)
         symbolic_link_path.unlink(missing_ok=True)
         symbolic_link_path.symlink_to(img_path)

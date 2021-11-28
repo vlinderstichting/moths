@@ -1,7 +1,7 @@
+import shutil
 from pathlib import Path
 
 import typer
-import shutil
 
 remove_small_folder_app = typer.Typer()
 

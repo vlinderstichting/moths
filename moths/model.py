@@ -3,13 +3,12 @@ import time
 from dataclasses import dataclass
 from typing import Tuple
 
+import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch import Tensor, nn
 from torchvision import models
 
 from moths.label_hierarchy import LabelHierarchy
-
-import torch.nn.functional as F
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +17,6 @@ log = logging.getLogger(__name__)
 class ModelConfig(DictConfig):
     zoo_name: str
     pretrained: bool
-
 
 
 class Model(nn.Module):
