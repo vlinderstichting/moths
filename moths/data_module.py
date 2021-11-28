@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Callable, List, Optional
 
 import numpy as np
@@ -13,9 +14,15 @@ from torchvision.transforms import Compose
 
 from moths.config import resolve_config_path
 from moths.datasets import LabelHierarchyImageFolder
-from moths.label_hierarchy import from_file
+from moths.label_hierarchy import label_hierarchy_from_file
 
 log = logging.getLogger(__name__)
+
+
+class WeightedSamplingMode(Enum):
+    NONE = "none"
+    FREQ = "freq"  # based on frequency
+    ROOT = "root"  # in between frequency and none by take the square root of the sum
 
 
 @dataclass
@@ -34,7 +41,7 @@ class DataConfig(DictConfig):
     pin_memory: bool
 
     min_samples: int
-    weighted_sampling: bool
+    weighted_sampling: WeightedSamplingMode
 
 
 class DataModule(pl.LightningDataModule):
@@ -48,18 +55,9 @@ class DataModule(pl.LightningDataModule):
         test_tfs_instantiated = [instantiate(c) for c in config.test_transforms]
         self._test_transforms = Compose(test_tfs_instantiated)
 
-        class_counts = {
-            p.name: len(list(p.iterdir()))
-            for p in resolve_config_path(config.data_path).iterdir()
-        }
-        classes = set(class_counts.keys())
-        classes_to_trim = {c for c, n in class_counts.items() if n < config.min_samples}
-        log.info(
-            f"Found {len(classes)} classes. {len(classes_to_trim)} have less than {config.min_samples} samples."
-        )
-
         label_hierarchy_path = resolve_config_path(config.label_hierarchy_file)
-        self.label_hierarchy = from_file(label_hierarchy_path, classes, classes_to_trim)
+        data_source_path = resolve_config_path(config.data_path)
+        self.label_hierarchy = label_hierarchy_from_file(label_hierarchy_path, data_source_path, config.min_samples)
 
         log.info(
             f"Final class count: "
@@ -110,20 +108,15 @@ class DataModule(pl.LightningDataModule):
             stratify=val_test_targets,
         )
 
-        if self.config.weighted_sampling:
+        if self.config.weighted_sampling != WeightedSamplingMode.NONE:
             train_targets = [full_targets[x] for x in train_indices]
-            targets_unique, targets_counts = np.unique(
-                train_targets, return_counts=True
-            )
+            targets_unique, targets_counts = np.unique(train_targets, return_counts=True)
             targets_weight_per_target = 1 / (targets_counts / targets_counts.sum())
-            target_weight_map = {
-                targets_unique[i]: targets_weight_per_target[i]
-                for i in range(len(targets_unique))
-            }
+            if self.config.weighted_sampling == WeightedSamplingMode.ROOT:
+                targets_weight_per_target = np.sqrt(targets_weight_per_target)
+            target_weight_map = {targets_unique[i]: targets_weight_per_target[i] for i in range(len(targets_unique))}
             target_weights = [target_weight_map[t] for t in train_targets]
-            self.train_sampler = WeightedRandomSampler(
-                target_weights, len(targets_unique), replacement=True
-            )
+            self.train_sampler = WeightedRandomSampler(target_weights, len(targets_unique), replacement=True)
         else:
             self.train_sampler = None
 

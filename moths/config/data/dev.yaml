@@ -9,6 +9,7 @@ min_samples: 4
 weighted_sampling: false
 
 train_transforms:
+  - _target_: torchvision.transforms.TrivialAugmentWide
   - _target_: torchvision.transforms.Resize
     size: 224
   - _target_: torchvision.transforms.RandomCrop

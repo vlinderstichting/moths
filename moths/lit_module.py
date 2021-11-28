@@ -9,10 +9,23 @@ from torch import Tensor, nn
 from torchmetrics import Metric
 
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
+from moths.mix import mixup_batch, mix_loss
 from moths.model import Model
 
 LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
 BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for loss
+
+
+class MixMode:
+    MIXUP = "mixup"
+    CUTMIX = "cutmix"
+
+
+@dataclass
+class MixConfig:
+    mode: MixMode
+    probability: float
+    alpha: float
 
 
 @dataclass
@@ -28,6 +41,10 @@ class LitConfig:
     scheduler: Optional[Any] = None
     scheduler_interval: str = "None"
 
+    data_mix: Optional[MixConfig] = None
+
+    unfreeze_backbone_epoch: int = 0
+
 
 class LitModule(pl.LightningModule):
     """
@@ -35,13 +52,12 @@ class LitModule(pl.LightningModule):
     scored, namely; species, group, family, and genus, in that order.
     """
 
-    def __init__(
-        self, config: LitConfig, model: Model, label_hierarchy: LabelHierarchy
-    ) -> None:
+    def __init__(self, config: LitConfig, model: Model, label_hierarchy: LabelHierarchy) -> None:
         super(LitModule, self).__init__()
         self.config = config
         self.model = model
         self.label_hierarchy = label_hierarchy
+        self.use_mix = config.data_mix is not None
 
         def instantiate_metric(config: DictConfig, label: str):
             num_classes = len(get_classes_by_label(label_hierarchy, label))
@@ -50,15 +66,9 @@ class LitModule(pl.LightningModule):
         # note same metrics for val and test
         # set, level, metrics
         self.metrics: Dict[str, Dict[str, List[Metric]]] = {
-            "train": {
-                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
-            "val": {
-                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
-            "test": {
-                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
+            "train": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
+            "val": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
+            "test": {l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS},
         }
 
         for phase_name in ["train", "val", "test"]:
@@ -67,9 +77,11 @@ class LitModule(pl.LightningModule):
                     metric.to(self.config.device)
 
         self._loss_fn: nn.Module = instantiate(self.config.loss)
-        self._loss_weights = (
-            torch.tensor([self.config.loss_weights]).long().to(self.config.device)
-        )
+        self._loss_weights = torch.tensor([self.config.loss_weights]).long().to(self.config.device)
+
+        self._frozen_backbone_parameters = [p for p in model.backbone.parameters() if p.requires_grad]
+        for p in self._frozen_backbone_parameters:
+            p.requires_grad = False
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
@@ -85,8 +97,14 @@ class LitModule(pl.LightningModule):
 
     def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
-        y_hat = self.model(x)
-        loss = self.loss_fn(y_hat, y)
+
+        if self.use_mix and phase_name == "train":
+            x, ya, yb, l = mixup_batch(x, y, self.config.data_mix.probability, self.config.data_mix.alpha)
+            y_hat = self.model(x)
+            loss = mix_loss(self.loss_fn, y_hat, ya, yb, l)
+        else:
+            y_hat = self.model(x)
+            loss = self.loss_fn(y_hat, y)
 
         self.log(f"{phase_name}-loss", loss)
 
@@ -125,29 +143,30 @@ class LitModule(pl.LightningModule):
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
         return
-        preds = (
-            torch.concat([batch["species"][0] for batch in outputs])
-            .detach()
-            .cpu()
-            .numpy()
-        )
-        targets = (
-            torch.concat([batch["species"][1] for batch in outputs])
-            .detach()
-            .cpu()
-            .numpy()
-        )
-
-        # get
-        north_star = None
-        self.log(f"{phase_name}-north-star", north_star)
+        # preds = (
+        #     torch.concat([batch["species"][0] for batch in outputs])
+        #     .detach()
+        #     .cpu()
+        #     .numpy()
+        # )
+        # targets = (
+        #     torch.concat([batch["species"][1] for batch in outputs])
+        #     .detach()
+        #     .cpu()
+        #     .numpy()
+        # )
+        #
+        # # get
+        # north_star = None
+        # self.log(f"{phase_name}-north-star", north_star)
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")
+        if self.current_epoch == self.config.unfreeze_backbone_epoch:
+            for p in self._frozen_backbone_parameters:
+                p.requires_grad = True
 
-    def training_step(
-        self, batch: Tuple[Tensor, Tensor], batch_idx: int
-    ) -> BATCH_OUTPUT:
+    def training_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> BATCH_OUTPUT:
         return self._step(batch, "train")
 
     def training_epoch_end(self, outputs: List[BATCH_OUTPUT]):
@@ -157,9 +176,7 @@ class LitModule(pl.LightningModule):
     def on_validation_epoch_start(self):
         self._clear_metrics("val")
 
-    def validation_step(
-        self, batch: Tuple[Tensor, Tensor], batch_idx: int
-    ) -> BATCH_OUTPUT:
+    def validation_step(self, batch: Tuple[Tensor, Tensor], batch_idx: int) -> BATCH_OUTPUT:
         return self._step(batch, "val")
 
     def validation_epoch_end(self, outputs: List[BATCH_OUTPUT]):
@@ -177,16 +194,12 @@ class LitModule(pl.LightningModule):
         self._log_north_star("test", outputs)
 
     def configure_optimizers(self):
-        optimizer = instantiate(
-            self.config.optimizer, params=self.model.parameters(), _convert_="partial"
-        )
+        optimizer = instantiate(self.config.optimizer, params=self.model.parameters(), _convert_="partial")
 
         if self.config.scheduler is None:
             return optimizer
 
-        scheduler = instantiate(
-            self.config.scheduler, optimizer=optimizer, _convert_="partial"
-        )
+        scheduler = instantiate(self.config.scheduler, optimizer=optimizer, _convert_="partial")
 
         return {
             "optimizer": optimizer,

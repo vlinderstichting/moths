@@ -2,7 +2,7 @@ import csv
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,17 @@ def get_classes_by_label(hierarchy: LabelHierarchy, label: str):
     raise ValueError("unknown label")
 
 
-def from_file(path: Path, classes: Set[str], trim: Set[str]) -> LabelHierarchy:
+def label_hierarchy_from_file(path: Path, data_path: Path, min_samples: int) -> LabelHierarchy:
+    class_counts = {
+        p.name: len(list(p.iterdir()))
+        for p in data_path.iterdir()
+    }
+    classes = set(class_counts.keys())
+    classes_to_trim = {c for c, n in class_counts.items() if n < min_samples}
+    log.info(
+        f"Found {len(classes)} classes. {len(classes_to_trim)} have less than {min_samples} samples."
+    )
+
     with path.open("r") as f:
         reader = csv.reader(f, delimiter=";", quotechar='"')
         _ = next(reader)
@@ -49,11 +59,11 @@ def from_file(path: Path, classes: Set[str], trim: Set[str]) -> LabelHierarchy:
     hierarchy_map = {
         klass: (group, family, genus)
         for klass, _, group, family, genus in rows
-        if klass in classes and klass not in trim
+        if klass in classes and klass not in classes_to_trim
     }
 
     log.info(
-        f"Cannot find {len(classes - trim) - len(hierarchy_map)} classes in family data."
+        f"Cannot find {len(classes - classes_to_trim) - len(hierarchy_map)} classes in family data."
     )
 
     # in: index to name

@@ -21,13 +21,10 @@ def write_valid_paths(out_path: Path, data_paths: List[Path]) -> None:
     """
     paths_to_validate = []
 
-    # hierarchy = hierarchy_from_path(label_hierarchy_path)
-    # classes = set(hierarchy.classes)
-
     for data_path in data_paths:
         for class_path in data_path.iterdir():
 
-            if not class_path.is_dir():  # or class_path.name not in classes:
+            if not class_path.is_dir():
                 print(f"Ignoring {class_path}...")
                 continue
 
