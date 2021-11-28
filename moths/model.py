@@ -1,16 +1,30 @@
 import logging
-import time
 from dataclasses import dataclass
 from typing import Tuple
 
-import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch import Tensor, nn
 from torchvision import models
+from torchvision.models import EfficientNet, ResNet
 
 from moths.label_hierarchy import LabelHierarchy
 
 log = logging.getLogger(__name__)
+
+
+def _get_in_features_and_set_identify(backbone: nn.Module) -> int:
+    if isinstance(backbone, EfficientNet):
+        in_features = backbone.classifier[1].in_features
+        backbone.classifier[1] = nn.Identity()
+
+    elif isinstance(backbone, ResNet):
+        in_features = backbone.fc.in_features
+        backbone.fc = nn.Identity()
+
+    else:
+        raise NotImplementedError
+
+    return in_features
 
 
 @dataclass
@@ -22,15 +36,11 @@ class ModelConfig(DictConfig):
 class Model(nn.Module):
     def __init__(self, config: ModelConfig, hierarchy: LabelHierarchy) -> None:
         super(Model, self).__init__()
-        if config.zoo_name != "debug" and not hasattr(models, config.zoo_name):
-            raise ValueError
 
         model_fn = getattr(models, config.zoo_name)
         self.backbone: nn.Module = model_fn(pretrained=config.pretrained)
 
-        # TODO: different architectures might have different last layer names
-        in_features = self.backbone.fc.in_features
-        self.backbone.fc = nn.Identity()
+        in_features = _get_in_features_and_set_identify(self.backbone)
 
         self.fc_class = nn.Linear(in_features, len(hierarchy.classes))
         self.fc_group = nn.Linear(in_features, len(hierarchy.groups))

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytorch_lightning as pl
@@ -16,7 +17,7 @@ LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
 BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for loss
 
 
-class MixMode:
+class MixMode(Enum):
     MIXUP = "mixup"
     CUTMIX = "cutmix"
 

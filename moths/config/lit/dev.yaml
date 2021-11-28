@@ -8,10 +8,10 @@ optimizer:
 loss:
   _target_: torch.nn.CrossEntropyLoss
 
-data_mix:
-  mode: mixup
-  probability: 1.0
-  alpha: 0.5
+#data_mix:
+#  mode: MIXUP
+#  probability: 1.0
+#  alpha: 0.5
 
 loss_weights:
   - 1
