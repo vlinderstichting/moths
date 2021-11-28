@@ -1,20 +1,20 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig
-from torch import Tensor, nn
+from torch import Tensor, nn, tensor
 from torchmetrics import Metric
 
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
-from moths.mix import mixup_batch, mix_loss
+from moths.mix import mix_loss, mixup_batch
 from moths.model import Model
 
 LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
-BATCH_OUTPUT = Dict[str, LABEL_OUTPUT]  # one for every label and "loss" for loss
+BATCH_OUTPUT = Dict[str, Union[LABEL_OUTPUT, Tensor]]  # one for every label and "loss" for loss
 
 
 class MixMode(Enum):
@@ -124,6 +124,7 @@ class LitModule(pl.LightningModule):
 
         out = {l: (y_hat[i].detach(), y[i]) for i, l in enumerate(LABELS)}
         out["loss"] = loss
+        out["size"] = tensor(x.size()[0], device=loss.device)
 
         return out
 
@@ -141,6 +142,12 @@ class LitModule(pl.LightningModule):
                     continue
                 log_name = f"epoch-{phase_name}-{l}-{metric.__class__.__name__.lower()}"
                 self.log(log_name, log_value)
+
+    def _log_epoch_loss(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+        losses = torch.stack([o["loss"] for o in outputs])
+        sizes = torch.stack([o["size"] for o in outputs])
+        loss = (losses * sizes).sum() / sizes.sum()
+        self.log(f"epoch-{phase_name}-loss", loss)
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
         return
@@ -172,6 +179,7 @@ class LitModule(pl.LightningModule):
 
     def training_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("train")
+        self._log_epoch_loss("train", outputs)
         self._log_north_star("train", outputs)
 
     def on_validation_epoch_start(self):
@@ -182,6 +190,7 @@ class LitModule(pl.LightningModule):
 
     def validation_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("val")
+        self._log_epoch_loss("val", outputs)
         self._log_north_star("val", outputs)
 
     def on_test_epoch_start(self):
@@ -192,6 +201,7 @@ class LitModule(pl.LightningModule):
 
     def test_epoch_end(self, outputs: List[BATCH_OUTPUT]):
         self._log_metric_compute("test")
+        self._log_epoch_loss("test", outputs)
         self._log_north_star("test", outputs)
 
     def configure_optimizers(self):
