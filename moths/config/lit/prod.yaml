@@ -8,6 +8,12 @@ optimizer:
 loss:
   _target_: torch.nn.CrossEntropyLoss
 
+loss_weights:
+  - 1
+  - 1
+  - 1
+  - 1
+
 metrics:
   - _target_: torchmetrics.Accuracy
     average: micro
