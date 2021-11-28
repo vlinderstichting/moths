@@ -107,12 +107,12 @@ class LitModule(pl.LightningModule):
             y_hat = self.model(x)
             loss = self.loss_fn(y_hat, y)
 
-        self.log(f"{phase_name}-loss", loss)
+        self.log(f"{phase_name}-loss", loss.detach())
 
         # assume same order
         for i, l in enumerate(LABELS):
-            y_hat_label = torch.argmax(y_hat[i], dim=1)
-            y_label = y[i]
+            y_hat_label = torch.argmax(y_hat[i], dim=1).detach()
+            y_label = y[i].detach()
             for metric in self.metrics[phase_name][l]:
                 log_value = metric(y_hat_label, y_label)
                 if log_value is None:
@@ -122,7 +122,7 @@ class LitModule(pl.LightningModule):
                 if phase_name == "train":
                     self.log(log_name, log_value)
 
-        out = {l: (y_hat[i].detach(), y[i]) for i, l in enumerate(LABELS)}
+        out = {l: (y_hat[i].detach(), y[i].detach()) for i, l in enumerate(LABELS)}
         out["loss"] = loss
         out["size"] = tensor(x.size()[0], device=loss.device)
 
@@ -147,7 +147,7 @@ class LitModule(pl.LightningModule):
         losses = torch.stack([o["loss"] for o in outputs])
         sizes = torch.stack([o["size"] for o in outputs])
         loss = (losses * sizes).sum() / sizes.sum()
-        self.log(f"epoch-{phase_name}-loss", loss)
+        self.log(f"epoch-{phase_name}-loss", loss.detach())
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
         return
