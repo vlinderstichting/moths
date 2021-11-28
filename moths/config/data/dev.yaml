@@ -9,6 +9,8 @@ min_samples: 4
 weighted_sampling: false
 
 train_transforms:
+  - _target_: torchvision.transforms.Resize
+    size: 224
   - _target_: torchvision.transforms.RandomCrop
     size: 224
     pad_if_needed: true
@@ -25,6 +27,8 @@ train_transforms:
 
 
 test_transforms:
+  - _target_: torchvision.transforms.Resize
+    size: 224
   - _target_: torchvision.transforms.CenterCrop
     size: 224
   - _target_: torchvision.transforms.ToTensor

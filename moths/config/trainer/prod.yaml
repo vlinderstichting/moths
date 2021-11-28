@@ -1,6 +1,6 @@
 instance:
   _target_: pytorch_lightning.Trainer
-  checkpoint_callback: True
+  enable_checkpointing: True
   default_root_dir: null
   gradient_clip_val: 0.0
   num_processes: 1

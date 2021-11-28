@@ -120,7 +120,7 @@ class DataModule(pl.LightningDataModule):
         self.val_dataset = Subset(full_val_test_dataset, val_indices)
         self.test_dataset = Subset(full_val_test_dataset, test_indices)
 
-        log.debug(
+        log.info(
             f"stratified a train, val, and test datasets with "
             f"{len(self.train_dataset)}, {len(self.val_dataset)}, "
             f"and {len(self.test_dataset)} samples, respectively"
