@@ -27,6 +27,21 @@ def _get_in_features_and_set_identify(backbone: nn.Module) -> int:
     return in_features
 
 
+def _get_children(node, out):
+    children = list(node.children())
+
+    # order is important
+    # first do children
+    # then do leaves as "out + leaf"
+
+    if len(children) > 0:
+        for child in node.children():
+            out = _get_children(child, out)
+        return out
+    else:
+        return out + [node]
+
+
 @dataclass
 class ModelConfig(DictConfig):
     zoo_name: str
@@ -39,6 +54,8 @@ class Model(nn.Module):
 
         model_fn = getattr(models, config.zoo_name)
         self.backbone: nn.Module = model_fn(pretrained=config.pretrained)
+
+        # children = _get_children(self.backbone, [])
 
         in_features = _get_in_features_and_set_identify(self.backbone)
 
