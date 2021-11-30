@@ -49,26 +49,3 @@ class LabelHierarchyImageFolder(ImageFolder):
             for c in classes
         }
         return classes, class_to_idx
-
-
-class MixUpDataset(LabelHierarchyImageFolder):
-    def __init__(
-        self,
-        root: Path,
-        hierarchy: LabelHierarchy,
-        alpha: float,
-        probability: float,
-        transform: Optional[Callable] = None,
-    ) -> None:
-        super().__init__(root, hierarchy, transform)
-        self.alpha = alpha
-        self.probability = probability
-
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        sample_a, target_a = super().__getitem__(index)
-
-        if np.random.rand() > self.probability:
-            return sample_a, target_a
-
-        other_index = np.random.randint(len(self))
-        sample_b, target_b = super().__getitem__(other_index)

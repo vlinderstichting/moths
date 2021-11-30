@@ -135,3 +135,10 @@ dmypy.json
 outputs/
 
 test_data/image_folder
+
+
+# images
+*.jpg
+*.png
+*.JPEG
+*.JPG
