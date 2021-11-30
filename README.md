@@ -20,6 +20,16 @@ The script serves two purposes:
 
 The files are written as symbolic links, and thus do not take additional space.
 
+# Configure and run
+
+All configuration can be found in `moths/config`.
+
+Train by running:
+
+```console
+python moths/scripts/train.py
+```
+
 # Development
 
 Unfortunately, in the code we took the order as specified in the family.csv file, ie.
