@@ -2,57 +2,28 @@ Repository for training &amp; serving a classification model for moth species.
 
 # Installation
 
-- poetry venv
+- poetry install
 - configure wandb
 
 # Prepare data
 
-There are two matters that complicate the loading and fetching of data:
-
-1. multiple paths as image data folder sources
-2. a label hierarchy of species (the class), group, family, and genus
-
-Point (1) is self-explanatory. Point (2) refers to the fact that the image data folders
-indicate what species an image belongs to, but we have an additional file that indicates
-what genus the species belongs to, what family the genus belongs to, and what group the
-family belongs to.
-
-The PyTorch library does not facilitate having multiple paths as image data folder
-sources.
-
-Two things need to happen as data preparation:
-
-1. generate a list valid (ie. non-corrupt) image files to use as cache
-2. generate a label hierarchy file to make sure the same classes from different sources
-   get assigned the same label index
+Run the following command:
 
 ```console
-python scripts/label_hierarchy.py test_output/ data/family.csv test_data/source_a test_data/source_b
-python scripts/valid_data_paths.py test_output/ test_data/source_a test_data/source_b
+python moths/scripts/valid_data_paths_symbolic.py test_data/ test_data/source_a test_data/source_b
 ```
 
-This will generate 3 files:
+The script serves two purposes:
 
-      test_output/
-      ├── invalid-paths.txt
-      ├── valid-paths.txt
-      └── label-hierarchy.csv
+1. it will combine multiple data sources into a single source, and
+2. it hides corrupted images.
 
-We need these files later for training and testing.
+The files are written as symbolic links, and thus do not take additional space.
 
-Note: the PyTorch `is_valid_file` method takes only the file name as parameter. Since it
-by default only checks the extension, this is enough. The caching system assumes (
-abuses) that file names are unique over all sources. For this project this is true.
+# Development
 
-It can be checked by running (taken
-from [StackOverflow](https://stackoverflow.com/a/45971199)):
-
-```console
-find /path/to/data -type f -printf '%p/ %f\n' | sort -k2 | uniq -f1 --all-repeated=separate
-```
-
-Note to developers: unfortunately, in the code we took the order as specified in the 
-family.csv file, ie. species, group, family, genus. But the hierarchy goes as 
-group > family > genus > species, where group is the largest and has the least classes, 
-and species is the smallest with the most classes.
+Unfortunately, in the code we took the order as specified in the family.csv file, ie.
+species, group, family, genus. But the hierarchy goes as group > family > genus >
+species, where group is the largest and has the least classes, and species is the
+smallest with the most classes.
 
