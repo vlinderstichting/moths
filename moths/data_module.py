@@ -57,7 +57,9 @@ class DataModule(pl.LightningDataModule):
 
         label_hierarchy_path = resolve_config_path(config.label_hierarchy_file)
         data_source_path = resolve_config_path(config.data_path)
-        self.label_hierarchy = label_hierarchy_from_file(label_hierarchy_path, data_source_path, config.min_samples)
+        self.label_hierarchy = label_hierarchy_from_file(
+            label_hierarchy_path, data_source_path, config.min_samples
+        )
 
         log.info(
             f"Final class count: "
@@ -110,13 +112,20 @@ class DataModule(pl.LightningDataModule):
 
         if self.config.weighted_sampling != WeightedSamplingMode.NONE:
             train_targets = [full_targets[x] for x in train_indices]
-            targets_unique, targets_counts = np.unique(train_targets, return_counts=True)
+            targets_unique, targets_counts = np.unique(
+                train_targets, return_counts=True
+            )
             targets_weight_per_target = 1 / (targets_counts / targets_counts.sum())
             if self.config.weighted_sampling == WeightedSamplingMode.ROOT:
                 targets_weight_per_target = np.sqrt(targets_weight_per_target)
-            target_weight_map = {targets_unique[i]: targets_weight_per_target[i] for i in range(len(targets_unique))}
+            target_weight_map = {
+                targets_unique[i]: targets_weight_per_target[i]
+                for i in range(len(targets_unique))
+            }
             target_weights = [target_weight_map[t] for t in train_targets]
-            self.train_sampler = WeightedRandomSampler(target_weights, len(targets_unique), replacement=True)
+            self.train_sampler = WeightedRandomSampler(
+                target_weights, len(targets_unique), replacement=True
+            )
         else:
             self.train_sampler = None
 

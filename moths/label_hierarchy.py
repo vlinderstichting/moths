@@ -39,11 +39,10 @@ def get_classes_by_label(hierarchy: LabelHierarchy, label: str):
     raise ValueError("unknown label")
 
 
-def label_hierarchy_from_file(path: Path, data_path: Path, min_samples: int) -> LabelHierarchy:
-    class_counts = {
-        p.name: len(list(p.iterdir()))
-        for p in data_path.iterdir()
-    }
+def label_hierarchy_from_file(
+    path: Path, data_path: Path, min_samples: int
+) -> LabelHierarchy:
+    class_counts = {p.name: len(list(p.iterdir())) for p in data_path.iterdir()}
     classes = set(class_counts.keys())
     classes_to_trim = {c for c, n in class_counts.items() if n < min_samples}
     log.info(

@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 import hydra
@@ -12,6 +13,8 @@ from moths.lit_module import LitConfig, LitModule
 from moths.logging import log_hyperparameters
 from moths.model import Model, ModelConfig
 from moths.trainer import TrainerConfig, get_trainer
+
+CONFIG_NAME = os.getenv("MOTHS_CONF_ENV", "prod")
 
 
 @dataclass
@@ -30,10 +33,12 @@ cs = ConfigStore.instance()
 cs.store(name="code_config", node=Config)
 
 
-@hydra.main(config_path="../config", config_name="config")
+@hydra.main(config_path="../config", config_name=CONFIG_NAME)
 def train(config: Config) -> None:
     prepare_config(config)
     seed_everything(config.seed, workers=True)
+
+    torch.backends.cudnn.benchmark = True
 
     data_module = DataModule(config.data)
     model = Model(config.model, data_module.label_hierarchy)
@@ -55,5 +60,4 @@ def train(config: Config) -> None:
 
 
 if __name__ == "__main__":
-    torch.backends.cudnn.benchmark = True
     train()

@@ -1,10 +1,10 @@
 defaults:
   - _self_
   - code_config
-  - data: prod
-  - model: prod
-  - lit: prod
-  - trainer: prod
+  - data: dev
+  - model: dev
+  - lit: dev
+  - trainer: dev
 
 seed: 31415
 debug: true
