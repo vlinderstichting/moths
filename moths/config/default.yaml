@@ -5,6 +5,8 @@ defaults:
   - lit: default
   - trainer: default
   - _self_
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
 
 seed: 31415
 tune: true

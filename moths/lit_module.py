@@ -40,7 +40,7 @@ class MixConfig:
 
 @dataclass
 class LitConfig:
-    loss: dict
+    loss: Any
     loss_weights: Tuple[float, float, float, float]
 
     metrics: List[Any]
@@ -50,7 +50,7 @@ class LitConfig:
     unfreeze_backbone_percentage: float
 
     optimizer: Any
-    scheduler: Optional[dict] = None
+    scheduler: Optional[Any] = None
     scheduler_interval: str = "None"
 
     data_mix: Optional[MixConfig] = None

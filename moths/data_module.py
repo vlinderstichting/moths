@@ -29,8 +29,8 @@ class WeightedSamplingMode(Enum):
 class DataConfig(DictConfig):
     data_path: str
 
-    train_transforms: List[dict]
-    test_transforms: List[dict]
+    train_transforms: List[Any]
+    test_transforms: List[Any]
 
     label_hierarchy_file: str
     test_fraction: float

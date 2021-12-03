@@ -1,0 +1,27 @@
+defaults:
+  - dev
+  - _self_
+  - override hydra/sweeper: ax
+
+hydra:
+  sweeper:
+    ax_config:
+      max_trials: 10
+
+      experiment:
+        minimize: true
+
+      early_stop:
+        max_epochs_without_improvement: 2
+
+      is_noisy: true
+
+      params:
+        lit.optimizer.lr:
+          type: range
+          value_type: float
+          bounds: [0.0003, 0.5]
+        model.zoo_name:
+          type: choice
+          value_type: str
+          values: [efficientnet_b7, resnet50]

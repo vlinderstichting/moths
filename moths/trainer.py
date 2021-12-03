@@ -9,9 +9,9 @@ from pytorch_lightning.loggers import LightningLoggerBase
 
 @dataclass
 class TrainerConfig(DictConfig):
-    instance: dict
-    callbacks: Dict[str, dict]
-    loggers: Dict[str, dict]
+    instance: Any
+    callbacks: Dict[str, Any]
+    loggers: Dict[str, Any]
 
 
 def get_trainer(config: TrainerConfig) -> Trainer:

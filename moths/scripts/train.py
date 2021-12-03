@@ -4,9 +4,12 @@ from dataclasses import dataclass
 
 import hydra
 import torch
+import wandb
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
 
 from moths.config import prepare_config
 from moths.data_module import DataConfig, DataModule
@@ -49,7 +52,8 @@ def train(config: Config) -> None:
     lit_module = LitModule(config.lit, model, data_module.label_hierarchy)
     trainer = get_trainer(config.trainer)
 
-    tune(config, trainer, lit_module, data_module)
+    if config.tune:
+        tune(config, trainer, lit_module, data_module)
     trainer.fit(lit_module, datamodule=data_module)
 
     # log after data module is instantiated via fit
@@ -63,7 +67,12 @@ def train(config: Config) -> None:
     if config.test:
         trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
 
-    # return value to optimize for in hyper parameter optimization
+    if any(isinstance(l, WandbLogger) for l in trainer.logger):
+        wandb.finish()
+
+    for callback in trainer.callbacks:
+        if isinstance(callback, ModelCheckpoint):
+            return callback.best_model_score.detach().cpu().numpy().item()
 
 
 if __name__ == "__main__":
