@@ -69,6 +69,8 @@ class DataModule(pl.LightningDataModule):
             f"{len(self.label_hierarchy.genuses) - 1}."
         )
 
+        self.batch_size = config.batch_size
+
     def _full_dataset(self, transform: Optional[Callable]) -> ImageFolder:
         return LabelHierarchyImageFolder(
             resolve_config_path(self.config.data_path),
@@ -143,7 +145,7 @@ class DataModule(pl.LightningDataModule):
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
             self.train_dataset,
-            batch_size=self.config.batch_size,
+            batch_size=self.batch_size,
             num_workers=self.config.num_workers,
             pin_memory=self.config.pin_memory,
             shuffle=True,
@@ -154,7 +156,7 @@ class DataModule(pl.LightningDataModule):
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
             self.val_dataset,
-            batch_size=self.config.batch_size,
+            batch_size=self.batch_size,
             num_workers=self.config.num_workers,
             pin_memory=self.config.pin_memory,
             shuffle=False,
@@ -164,7 +166,7 @@ class DataModule(pl.LightningDataModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
             self.test_dataset,
-            batch_size=self.config.batch_size,
+            batch_size=self.batch_size,
             num_workers=self.config.num_workers,
             pin_memory=self.config.pin_memory,
             shuffle=False,

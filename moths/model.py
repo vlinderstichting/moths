@@ -27,7 +27,7 @@ def _get_in_features_and_set_identify(backbone: nn.Module) -> int:
     return in_features
 
 
-def _get_children(node, out):
+def get_net_layers(node, out):
     children = list(node.children())
 
     # order is important
@@ -36,7 +36,7 @@ def _get_children(node, out):
 
     if len(children) > 0:
         for child in node.children():
-            out = _get_children(child, out)
+            out = get_net_layers(child, out)
         return out
     else:
         return out + [node]

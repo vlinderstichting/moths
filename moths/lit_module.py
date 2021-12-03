@@ -1,7 +1,9 @@
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
@@ -12,6 +14,8 @@ from torchmetrics import Metric
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
 from moths.mix import mix_loss, mixup_batch
 from moths.model import Model
+
+log = logging.getLogger(__name__)
 
 LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
 BATCH_OUTPUT = Dict[
@@ -46,7 +50,9 @@ class LitConfig:
 
     data_mix: Optional[MixConfig] = None
 
-    unfreeze_backbone_epoch: int = 0
+    unfreeze_backbone_epoch_start: int = 2
+    unfreeze_backbone_epoch_duration: int = 3
+    unfreeze_backbone_percentage: float = 0.25
 
 
 class LitModule(pl.LightningModule):
@@ -63,6 +69,7 @@ class LitModule(pl.LightningModule):
         self.model = model
         self.label_hierarchy = label_hierarchy
         self.use_mix = config.data_mix is not None
+        self.lr = config.optimizer.lr
 
         def instantiate_metric(config: DictConfig, label: str):
             num_classes = len(get_classes_by_label(label_hierarchy, label))
@@ -92,11 +99,10 @@ class LitModule(pl.LightningModule):
             torch.tensor([self.config.loss_weights]).long().to(self.config.device)
         )
 
-        self._frozen_backbone_parameters = [
+        self._backbone_parameters = [
             p for p in model.backbone.parameters() if p.requires_grad
         ]
-        for p in self._frozen_backbone_parameters:
-            p.requires_grad = False
+        self._freeze_backbone()
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
@@ -166,29 +172,57 @@ class LitModule(pl.LightningModule):
         self.log(f"epoch-{phase_name}-loss", loss.detach())
 
     def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
-        return
-        # preds = (
-        #     torch.concat([batch["species"][0] for batch in outputs])
-        #     .detach()
-        #     .cpu()
-        #     .numpy()
-        # )
-        # targets = (
-        #     torch.concat([batch["species"][1] for batch in outputs])
-        #     .detach()
-        #     .cpu()
-        #     .numpy()
-        # )
-        #
-        # # get
-        # north_star = None
-        # self.log(f"{phase_name}-north-star", north_star)
+        preds = (
+            torch.concat([batch["species"][0] for batch in outputs])
+            .detach()
+            .cpu()
+            .numpy()
+        )
+        targets = (
+            torch.concat([batch["species"][1] for batch in outputs])
+            .detach()
+            .cpu()
+            .numpy()
+        )
+        return None
+
+    def _freeze_backbone(self):
+        for p in self._backbone_parameters:
+            p.requires_grad = False
+
+        log.info("Frozen the complete backbone.")
+
+    def _unfreeze_backbone(self, fraction: float):
+        layer_ix = int(round((1 - fraction) * len(self._backbone_parameters)))
+
+        # assumes that the parameters are in order of the network
+        for p in self._backbone_parameters[layer_ix:]:
+            p.requires_grad = True
+
+        nb_layers = len(self._backbone_parameters) - layer_ix
+        pt_layers = round(fraction * 100)
+        log.info(
+            f"Unfrozen {nb_layers}/{len(self._backbone_parameters)} ({pt_layers}%) of the last layers."
+        )
+
+        nb_frozen = sum([not p.requires_grad for p in self._backbone_parameters])
+        pt_frozen = round((nb_frozen / len(self._backbone_parameters)) * 100)
+        log.info(f"Currently {nb_frozen} ({pt_frozen}%) frozen")
+
+    def _unfreeze_backbone_from_config(self):
+        epoch_start = self.config.unfreeze_backbone_epoch_start
+        epoch_end = epoch_start + self.config.unfreeze_backbone_epoch_duration
+
+        final_fraction = self.config.unfreeze_backbone_percentage
+
+        fraction = np.interp(
+            self.current_epoch, [epoch_start - 1, epoch_end], [0, final_fraction]
+        )
+        self._unfreeze_backbone(float(fraction))
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")
-        if self.current_epoch == self.config.unfreeze_backbone_epoch:
-            for p in self._frozen_backbone_parameters:
-                p.requires_grad = True
+        self._unfreeze_backbone_from_config()
 
     def training_step(
         self, batch: Tuple[Tensor, Tensor], batch_idx: int
@@ -226,8 +260,11 @@ class LitModule(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = instantiate(
-            self.config.optimizer, params=self.model.parameters(), _convert_="partial"
-        )
+            self.config.optimizer,
+            params=self.model.parameters(),
+            lr=self.lr,
+            _convert_="partial",
+        )  # set lr manually because auto_find_lr from pytorch lightning relies upon it
 
         if self.config.scheduler is None:
             return optimizer
