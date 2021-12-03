@@ -1,0 +1,11 @@
+defaults:
+  - code_config
+  - data: default
+  - model: default
+  - lit: default
+  - trainer: default
+  - _self_
+
+seed: 31415
+tune: true
+test: false
