@@ -9,7 +9,3 @@ defaults:
 seed: 31415
 debug: true
 test: false
-
-# @package data
-data_path: test_data/image_folder
-label_hierarchy_file: data/family.csv
