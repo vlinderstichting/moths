@@ -1,11 +1,24 @@
 defaults:
-  - _self_
   - code_config
-  - data: dev
-  - model: dev
-  - lit: dev
-  - trainer: dev
+  - default
+  - _self_
 
-seed: 31415
-debug: true
-test: false
+data:
+  data_path: test_data/image_folder
+  label_hierarchy_file: data/family.csv
+  test_fraction: 0.25
+  batch_size: 4
+  num_workers: 0
+  pin_memory: false
+  min_samples: 4
+
+trainer:
+  instance:
+    gpus: null
+    max_epochs: 3
+    min_epochs: 1
+    log_every_n_steps: 5
+
+  loggers:
+    wandb:
+      project: dev

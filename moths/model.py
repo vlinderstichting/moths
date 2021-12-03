@@ -28,6 +28,7 @@ def _get_in_features_and_set_identify(backbone: nn.Module) -> int:
 
 
 def get_net_layers(node, out):
+    # unused: might come in handy if .named_parameters turns out to return layers out of order
     children = list(node.children())
 
     # order is important

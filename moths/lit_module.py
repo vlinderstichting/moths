@@ -1,3 +1,4 @@
+import itertools
 import logging
 from dataclasses import dataclass
 from enum import Enum
@@ -22,6 +23,8 @@ BATCH_OUTPUT = Dict[
     str, Union[LABEL_OUTPUT, Tensor]
 ]  # one for every label and "loss" for loss
 
+PHASES = ["train", "val", "test"]
+
 
 class MixMode(Enum):
     MIXUP = "mixup"
@@ -37,22 +40,20 @@ class MixConfig:
 
 @dataclass
 class LitConfig:
-    device: str
-
-    loss: Any
+    loss: dict
     loss_weights: Tuple[float, float, float, float]
 
     metrics: List[Any]
 
+    unfreeze_backbone_epoch_start: int
+    unfreeze_backbone_epoch_duration: int
+    unfreeze_backbone_percentage: float
+
     optimizer: Any
-    scheduler: Optional[Any] = None
+    scheduler: Optional[dict] = None
     scheduler_interval: str = "None"
 
     data_mix: Optional[MixConfig] = None
-
-    unfreeze_backbone_epoch_start: int = 2
-    unfreeze_backbone_epoch_duration: int = 3
-    unfreeze_backbone_percentage: float = 0.25
 
 
 class LitModule(pl.LightningModule):
@@ -78,26 +79,14 @@ class LitModule(pl.LightningModule):
         # note same metrics for val and test
         # set, level, metrics
         self.metrics: Dict[str, Dict[str, List[Metric]]] = {
-            "train": {
+            phase: {
                 l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
-            "val": {
-                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
-            "test": {
-                l: [instantiate_metric(c, l) for c in config.metrics] for l in LABELS
-            },
+            }
+            for phase in PHASES
         }
 
-        for phase_name in ["train", "val", "test"]:
-            for label in LABELS:
-                for metric in self.metrics[phase_name][label]:
-                    metric.to(self.config.device)
-
         self._loss_fn: nn.Module = instantiate(self.config.loss)
-        self._loss_weights = (
-            torch.tensor([self.config.loss_weights]).long().to(self.config.device)
-        )
+        self._loss_weights = torch.tensor([self.config.loss_weights]).long()
 
         self._backbone_parameters = [
             p for p in model.backbone.parameters() if p.requires_grad
@@ -116,10 +105,10 @@ class LitModule(pl.LightningModule):
         x, y = batch
         return x, y.T
 
-    def _step(self, batch: Tuple[Tensor, Tensor], phase_name: str) -> BATCH_OUTPUT:
+    def _step(self, batch: Tuple[Tensor, Tensor], phase: str) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
 
-        if self.use_mix and phase_name == "train":
+        if self.use_mix and phase == "train":
             x, ya, yb, l = mixup_batch(
                 x, y, self.config.data_mix.probability, self.config.data_mix.alpha
             )
@@ -129,19 +118,19 @@ class LitModule(pl.LightningModule):
             y_hat = self.model(x)
             loss = self.loss_fn(y_hat, y)
 
-        self.log(f"{phase_name}-loss", loss.detach())
+        self.log(f"{phase}-loss", loss.detach())
 
         # assume same order
         for i, l in enumerate(LABELS):
             y_hat_label = torch.argmax(y_hat[i], dim=1).detach()
             y_label = y[i].detach()
-            for metric in self.metrics[phase_name][l]:
+            for metric in self.metrics[phase][l]:
                 log_value = metric(y_hat_label, y_label)
                 if log_value is None:
                     continue
-                log_name = f"{phase_name}-{l}-{metric.__class__.__name__.lower()}"
+                log_name = f"{phase}-{l}-{metric.__class__.__name__.lower()}"
 
-                if phase_name == "train":
+                if phase == "train":
                     self.log(log_name, log_value)
 
         out = {l: (y_hat[i].detach(), y[i].detach()) for i, l in enumerate(LABELS)}
@@ -150,28 +139,28 @@ class LitModule(pl.LightningModule):
 
         return out
 
-    def _clear_metrics(self, phase_name: str):
-        for i, l in enumerate(LABELS):
-            for metric in self.metrics[phase_name][l]:
+    def _clear_metrics(self, phase: str):
+        for label in LABELS:
+            for metric in self.metrics[phase][label]:
                 metric.reset()
 
-    def _log_metric_compute(self, phase_name: str):
+    def _log_metric_compute(self, phase: str):
         # assume same order
-        for i, l in enumerate(LABELS):
-            for metric in self.metrics[phase_name][l]:
+        for label in LABELS:
+            for metric in self.metrics[phase][label]:
                 log_value = metric.compute()
                 if log_value is None:
                     continue
-                log_name = f"epoch-{phase_name}-{l}-{metric.__class__.__name__.lower()}"
+                log_name = f"epoch-{phase}-{label}-{metric.__class__.__name__.lower()}"
                 self.log(log_name, log_value)
 
-    def _log_epoch_loss(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+    def _log_epoch_loss(self, phase: str, outputs: List[BATCH_OUTPUT]):
         losses = torch.stack([o["loss"] for o in outputs])
         sizes = torch.stack([o["size"] for o in outputs])
         loss = (losses * sizes).sum() / sizes.sum()
-        self.log(f"epoch-{phase_name}-loss", loss.detach())
+        self.log(f"epoch-{phase}-loss", loss.detach())
 
-    def _log_north_star(self, phase_name: str, outputs: List[BATCH_OUTPUT]):
+    def _log_north_star(self, phase: str, outputs: List[BATCH_OUTPUT]):
         preds = (
             torch.concat([batch["species"][0] for batch in outputs])
             .detach()
@@ -220,6 +209,13 @@ class LitModule(pl.LightningModule):
         )
         self._unfreeze_backbone(float(fraction))
 
+    def on_fit_start(self) -> None:
+        for phase, label in itertools.product(PHASES, LABELS):
+            for metric in self.metrics[phase][label]:
+                metric.to(self.device)
+
+        self._loss_weights.to(self.device)
+
     def on_train_epoch_start(self):
         self._clear_metrics("train")
         self._unfreeze_backbone_from_config()
@@ -262,9 +258,8 @@ class LitModule(pl.LightningModule):
         optimizer = instantiate(
             self.config.optimizer,
             params=self.model.parameters(),
-            lr=self.lr,
             _convert_="partial",
-        )  # set lr manually because auto_find_lr from pytorch lightning relies upon it
+        )
 
         if self.config.scheduler is None:
             return optimizer

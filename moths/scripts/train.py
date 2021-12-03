@@ -18,7 +18,7 @@ from moths.tune import tune
 
 log = logging.getLogger(__name__)
 
-CONFIG_NAME = os.getenv("MOTHS_CONF_ENV", "prod")
+CONFIG_NAME = os.getenv("MOTHS_CONF_ENV", "default")
 
 
 @dataclass
@@ -28,9 +28,9 @@ class Config(DictConfig):
     lit: LitConfig
     trainer: TrainerConfig
 
-    seed: int = 31415
-    debug: bool = False
-    test: bool = False
+    seed: int
+    test: bool
+    tune: bool
 
 
 cs = ConfigStore.instance()
@@ -62,6 +62,8 @@ def train(config: Config) -> None:
 
     if config.test:
         trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
+
+    # return value to optimize for in hyper parameter optimization
 
 
 if __name__ == "__main__":

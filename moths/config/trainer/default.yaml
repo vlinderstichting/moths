@@ -4,29 +4,31 @@ instance:
   default_root_dir: null
   gradient_clip_val: 0.0
   num_processes: 1
-  gpus: null
+  gpus: 1
   log_gpu_memory: null
   overfit_batches: 0.0
   fast_dev_run: False
-  max_epochs: 3
-  min_epochs: 1
-  log_every_n_steps: 5
+  max_epochs: 20
+  min_epochs: 4
+  log_every_n_steps: 150
   precision: 32
   num_sanity_val_steps: 2
   profiler: null
   auto_lr_find: False
 
 loggers:
-  - _target_: pytorch_lightning.loggers.TensorBoardLogger
+  tensorboard:
+    _target_: pytorch_lightning.loggers.TensorBoardLogger
     save_dir: "tensorboard/"
     default_hp_metric: false
     name: ""
     version: ""
     log_graph: false
     prefix: ""
-  - _target_: pytorch_lightning.loggers.wandb.WandbLogger
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
     entity: "butterflies"
-    project: "dev"
+    project: "butterflies"
     offline: False
     id: null # pass correct id to resume experiment!
     log_model: False
@@ -35,18 +37,20 @@ loggers:
     group: ""
     tags: [ ]
 
-
 callbacks:
-  - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-    monitor: "val-loss"
+  checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "epoch-val-loss"
     dirpath: "checkpoints/"
     save_last: true
     filename: "{epoch:03}-{val-total-loss:.4f}"
     save_top_k: 1
-  - _target_: pytorch_lightning.callbacks.LearningRateMonitor
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
     logging_interval: step
     log_momentum: True
-  - _target_: pytorch_lightning.callbacks.EarlyStopping
-    monitor: "val-loss"
+  early_stopping:
+    _target_: pytorch_lightning.callbacks.EarlyStopping
+    monitor: "epoch-val-loss"
     patience: 2
     check_on_train_epoch_end: false
