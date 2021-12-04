@@ -16,7 +16,7 @@ from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
 from moths.mix import mix_loss, mixup_batch
 from moths.model import Model
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("MOTHS")
 
 LABEL_OUTPUT = Tuple[Tensor, Tensor]  # logits (N,C,(2??)) and targets (N,)
 BATCH_OUTPUT = Dict[
@@ -86,7 +86,13 @@ class LitModule(pl.LightningModule):
         }
 
         self._loss_fn: nn.Module = instantiate(self.config.loss)
-        self._loss_weights = torch.tensor([self.config.loss_weights]).long()
+        self._loss_weights = torch.tensor(self.config.loss_weights).long()
+        self._loss_weights = (
+            self._loss_weights / self._loss_weights.sum()
+        ) * self._loss_weights.shape[0]
+
+        log.debug(f"loss weights read from {self.config.loss_weights}")
+        log.info(f"loss weights set to {self._loss_weights.numpy()}")
 
         self._backbone_parameters = [
             p for p in model.backbone.parameters() if p.requires_grad
@@ -161,6 +167,7 @@ class LitModule(pl.LightningModule):
         self.log(f"epoch-{phase}-loss", loss.detach())
 
     def _log_north_star(self, phase: str, outputs: List[BATCH_OUTPUT]):
+        return None
         preds = (
             torch.concat([batch["species"][0] for batch in outputs])
             .detach()
@@ -179,7 +186,7 @@ class LitModule(pl.LightningModule):
         for p in self._backbone_parameters:
             p.requires_grad = False
 
-        log.info("Frozen the complete backbone.")
+        log.debug("froze the complete backbone")
 
     def _unfreeze_backbone(self, fraction: float):
         layer_ix = int(round((1 - fraction) * len(self._backbone_parameters)))
@@ -190,13 +197,13 @@ class LitModule(pl.LightningModule):
 
         nb_layers = len(self._backbone_parameters) - layer_ix
         pt_layers = round(fraction * 100)
-        log.info(
-            f"Unfrozen {nb_layers}/{len(self._backbone_parameters)} ({pt_layers}%) of the last layers."
+        log.debug(
+            f"unfroze {nb_layers}/{len(self._backbone_parameters)} ({pt_layers}%) of the last layers."
         )
 
         nb_frozen = sum([not p.requires_grad for p in self._backbone_parameters])
         pt_frozen = round((nb_frozen / len(self._backbone_parameters)) * 100)
-        log.info(f"Currently {nb_frozen} ({pt_frozen}%) frozen")
+        log.debug(f"currently {nb_frozen} ({pt_frozen}%) layers are frozen")
 
     def _unfreeze_backbone_from_config(self):
         epoch_start = self.config.unfreeze_backbone_epoch_start

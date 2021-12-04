@@ -50,17 +50,9 @@ def resolve_config_path(path: Union[Path, str]) -> Path:
 
 
 def update_tuned_parameters(config: DictConfig, lr: float, batch_size: int) -> None:
-    """Mutate the config by applying logic.
-
-    Currently it does:
-    - when in debug mode, set the config to a single thread cpu process
-
-    """
     OmegaConf.set_struct(config, False)
 
-    config["tuned"] = dict()
-
-    config["tuned"]["learning_rate"] = lr
-    config["tuned"]["batch_size"] = batch_size
+    config.lit.optimizer.lr = lr
+    config.data.batch_size = batch_size
 
     OmegaConf.set_struct(config, True)

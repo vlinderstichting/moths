@@ -1,20 +1,20 @@
 instance:
   _target_: pytorch_lightning.Trainer
-  enable_checkpointing: True
+  enable_checkpointing: true
   default_root_dir: null
   gradient_clip_val: 0.0
   num_processes: 1
   gpus: 1
   log_gpu_memory: null
   overfit_batches: 0.0
-  fast_dev_run: False
+  fast_dev_run: false
   max_epochs: 20
   min_epochs: 4
   log_every_n_steps: 150
   precision: 32
   num_sanity_val_steps: 2
   profiler: null
-  auto_lr_find: False
+  auto_lr_find: false
 
 loggers:
   tensorboard:
@@ -29,9 +29,9 @@ loggers:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     entity: "butterflies"
     project: "butterflies"
-    offline: False
+    offline: false
     id: null # pass correct id to resume experiment!
-    log_model: False
+    log_model: false
     prefix: ""
     job_type: "train"
     group: ""
@@ -48,7 +48,7 @@ callbacks:
   lr_monitor:
     _target_: pytorch_lightning.callbacks.LearningRateMonitor
     logging_interval: step
-    log_momentum: True
+    log_momentum: true
   early_stopping:
     _target_: pytorch_lightning.callbacks.EarlyStopping
     monitor: "epoch-val-loss"

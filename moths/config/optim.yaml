@@ -17,11 +17,39 @@ hydra:
       is_noisy: true
 
       params:
-        lit.optimizer.lr:
+        data.min_samples:
           type: range
-          value_type: float
-          bounds: [0.0003, 0.5]
+          value_type: int
+          bounds: [ 100, 500 ]
+        data.weighted_sampling:
+          type: choice
+          value_type: str
+          values: [ NONE, FREQ, ROOT ]
         model.zoo_name:
           type: choice
           value_type: str
-          values: [efficientnet_b7, resnet50]
+          values: [ efficientnet_b7, resnet50 ]
+        lit.loss.label_smoothing:
+          type: range
+          value_type: float
+          bounds: [ 0.0, 0.1 ]
+        lit.loss_weights.0:
+          type: range
+          value_type: int
+          bounds: [ 1, 6 ]
+        lit.unfreeze_backbone_epoch_start:
+          type: range
+          value_type: int
+          bounds: [ 0, 2 ]
+        lit.unfreeze_backbone_epoch_duration:
+          type: range
+          value_type: int
+          bounds: [ 0, 2 ]
+        lit.unfreeze_backbone_percentage:
+          type: range
+          value_type: float
+          bounds: [ 0.0, 1.0 ]
+        trainer.instance.precision:
+          type: choice
+          value_type: str
+          values: [ 16, 32 ]

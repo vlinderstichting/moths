@@ -19,7 +19,7 @@ from moths.model import Model, ModelConfig
 from moths.trainer import TrainerConfig, get_trainer
 from moths.tune import tune
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("MOTHS")
 
 CONFIG_NAME = os.getenv("MOTHS_CONF_ENV", "default")
 
@@ -51,6 +51,8 @@ def train(config: Config) -> None:
     model = Model(config.model, data_module.label_hierarchy)
     lit_module = LitModule(config.lit, model, data_module.label_hierarchy)
     trainer = get_trainer(config.trainer)
+
+    log.info("instantiated required objects from config")
 
     if config.tune:
         tune(config, trainer, lit_module, data_module)

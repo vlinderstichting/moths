@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("MOTHS")
 
 LABELS = ["species", "group", "family", "genus"]
 OTHER_NAME = "Other"
