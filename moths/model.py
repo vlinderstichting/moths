@@ -9,7 +9,7 @@ from torchvision.models import EfficientNet, RegNet, ResNet
 
 from moths.label_hierarchy import LabelHierarchy
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("MOTHS")
 
 
 def _get_in_features_and_set_identify(backbone: nn.Module) -> int:

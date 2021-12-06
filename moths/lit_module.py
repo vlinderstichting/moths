@@ -217,11 +217,13 @@ class LitModule(pl.LightningModule):
         self._unfreeze_backbone(float(fraction))
 
     def on_fit_start(self) -> None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
         for phase, label in itertools.product(PHASES, LABELS):
             for metric in self.metrics[phase][label]:
-                metric.to(self.device)
+                metric.to(device)
 
-        self._loss_weights.to(self.device)
+        self._loss_weights.to(device)
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")

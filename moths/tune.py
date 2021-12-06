@@ -9,7 +9,7 @@ from moths.config import update_tuned_parameters
 from moths.data_module import DataModule
 from moths.lit_module import LitModule
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("MOTHS")
 
 
 def tune(
