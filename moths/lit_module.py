@@ -99,6 +99,12 @@ class LitModule(pl.LightningModule):
         ]
         self._freeze_backbone()
 
+        for phase, label in itertools.product(PHASES, LABELS):
+            for metric in self.metrics[phase][label]:
+                metric.to("cuda")
+
+        self._loss_weights.to("cuda")
+
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
         losses = [self._loss_fn(y_hat[i], torch.clone(y[i])) for i in [0, 1, 2, 3]]
@@ -219,15 +225,6 @@ class LitModule(pl.LightningModule):
             self.current_epoch, [epoch_start - 1, epoch_end], [0, final_fraction]
         )
         self._unfreeze_backbone(float(fraction))
-
-    def on_post_move_to_device(self) -> None:
-        for phase, label in itertools.product(PHASES, LABELS):
-            for metric in self.metrics[phase][label]:
-                metric.to(self.device)
-
-        self._loss_weights.to(self.device)
-
-        log.debug(f"moved loss weights and metrics to {self.device}")
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")
