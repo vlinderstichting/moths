@@ -3,6 +3,7 @@ instance:
   enable_checkpointing: true
   default_root_dir: null
   gradient_clip_val: 0.0
+  gradient_clip_algorithm: norm
   num_processes: 1
   gpus: 1
   log_gpu_memory: null
@@ -52,5 +53,5 @@ callbacks:
   early_stopping:
     _target_: pytorch_lightning.callbacks.EarlyStopping
     monitor: "epoch-val-loss"
-    patience: 2
+    patience: 3
     check_on_train_epoch_end: false

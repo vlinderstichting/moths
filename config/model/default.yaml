@@ -1,2 +1,2 @@
-zoo_name: resnet152
+zoo_name: efficientnet_b7
 pretrained: true

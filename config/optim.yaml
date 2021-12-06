@@ -28,7 +28,7 @@ hydra:
         model.zoo_name:
           type: choice
           value_type: str
-          values: [ efficientnet_b7, resnet50, regnet_x_32gf ]
+          values: [ efficientnet_b7, resnet152, regnet_x_32gf ]
         lit.loss.label_smoothing:
           type: range
           value_type: float
