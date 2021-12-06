@@ -38,6 +38,8 @@ def tune(
             f"could not auto tune lr, leaving the learning rate at {lit_module.lr}"
         )
 
+    # todo: save the image plot to wandb
+
     # teardown
     lit_module._freeze_backbone()
     update_tuned_parameters(config, lit_module.lr, data_module.batch_size)
