@@ -85,6 +85,8 @@ class DataModule(pl.LightningDataModule):
         full_train_dataset = self._full_dataset(self._train_transforms)
         full_val_test_dataset = self._full_dataset(self._test_transforms)
 
+        log.debug("created train and val_test datasets")
+
         full_indices = list(range(len(full_train_dataset)))
 
         # always do equal size for test and val

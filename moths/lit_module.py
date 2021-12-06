@@ -102,6 +102,10 @@ class LitModule(pl.LightningModule):
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
         losses = [self._loss_fn(y_hat[i], torch.clone(y[i])) for i in [0, 1, 2, 3]]
+
+        print([l.device for l in losses])
+        print(self._loss_weights.device)
+
         return torch.mean(torch.stack(losses) * self._loss_weights)
 
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
