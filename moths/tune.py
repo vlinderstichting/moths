@@ -20,7 +20,7 @@ def tune(
     lit_module._unfreeze_backbone(config.lit.unfreeze_backbone_percentage)
 
     # batch size
-    tuner.scale_batch_size(lit_module, datamodule=data_module, mode="binsearch")
+    # tuner.scale_batch_size(lit_module, datamodule=data_module, mode="binsearch")
     log.info(
         f"tuner set the batch size from {config.data.batch_size} to {data_module.batch_size}"
     )
