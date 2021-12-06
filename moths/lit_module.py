@@ -227,6 +227,8 @@ class LitModule(pl.LightningModule):
 
         self._loss_weights.to(self.device)
 
+        log.debug(f"moved loss weights and metrics to {self.device}")
+
     def on_train_epoch_start(self):
         self._clear_metrics("train")
         self._unfreeze_backbone_from_config()
