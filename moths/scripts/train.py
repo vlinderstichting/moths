@@ -21,7 +21,7 @@ from moths.tune import tune
 
 log = logging.getLogger("MOTHS")
 
-CONFIG_NAME = os.getenv("MOTHS_CONF_ENV", "default")
+CONFIG_NAME = os.getenv("MOTHS_CONFIG", "default")
 
 
 @dataclass
@@ -40,7 +40,7 @@ cs = ConfigStore.instance()
 cs.store(name="code_config", node=Config)
 
 
-@hydra.main(config_path="../config", config_name=CONFIG_NAME)
+@hydra.main(config_path="../../config", config_name=CONFIG_NAME)
 def train(config: Config) -> None:
     prepare_config(config)
     seed_everything(config.seed, workers=True)

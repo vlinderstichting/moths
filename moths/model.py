@@ -5,7 +5,7 @@ from typing import Tuple
 from omegaconf import DictConfig
 from torch import Tensor, nn
 from torchvision import models
-from torchvision.models import EfficientNet, ResNet
+from torchvision.models import EfficientNet, RegNet, ResNet
 
 from moths.label_hierarchy import LabelHierarchy
 
@@ -17,12 +17,12 @@ def _get_in_features_and_set_identify(backbone: nn.Module) -> int:
         in_features = backbone.classifier[1].in_features
         backbone.classifier[1] = nn.Identity()
 
-    elif isinstance(backbone, ResNet):
+    elif isinstance(backbone, (ResNet, RegNet)):
         in_features = backbone.fc.in_features
         backbone.fc = nn.Identity()
 
     else:
-        raise NotImplementedError
+        raise NotImplementedError(type(backbone))
 
     return in_features
 

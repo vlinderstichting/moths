@@ -16,7 +16,7 @@ from moths.config import resolve_config_path
 from moths.datasets import LabelHierarchyImageFolder
 from moths.label_hierarchy import label_hierarchy_from_file
 
-log = logging.getLogger("MOTHS")
+log = logging.getLogger(__name__)
 
 
 class WeightedSamplingMode(Enum):
