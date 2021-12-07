@@ -45,7 +45,7 @@ Train by running:
 
 ```console
 python moths/scripts/train.py
-python moths/scripts/train.py -m  # specify multi run when using optim.yaml
+MOTHS_CONFIG=optim python moths/scripts/train.py -m  # specify multi run when using optim.yaml
 ```
 
 There are 3 predefined configuration files:
@@ -124,6 +124,6 @@ Some non-obvious configuration options are:
   classification layer trained. This can be changed via 3 hyperparameters:
     1. `lit.unfreeze_backbone_epoch_start`: at what epoch start unfreezing
     2. `lit.unfreeze_backbone_epoch_duration`: how many epochs it takes to unfreeze
-    3. `lit.unfreeze_backbone_percentage`: how many are unfrozen at the end
+    3. `lit.unfreeze_backbone_percentage`: how many layers are unfrozen at the end
 
 - todo: mixup, cutmix
