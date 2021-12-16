@@ -6,7 +6,9 @@ batch_size: 256
 num_workers: 6
 pin_memory: true
 min_samples: 300
-weighted_sampling: NONE
+weighted_sampling: false
+weighted_sampling_fraction: 0.0
+
 
 train_transforms:
 #  - _target_: torchvision.transforms.TrivialAugmentWide

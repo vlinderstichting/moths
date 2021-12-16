@@ -56,15 +56,16 @@ def train(config: Config) -> None:
 
     if config.tune:
         tune(config, trainer, lit_module, data_module)
-    trainer.fit(lit_module, datamodule=data_module)
 
-    # log after data module is instantiated via fit
+    lit_module.setup()
     log_hyperparameters(
         config=config,
         lit_module=lit_module,
         data_module=data_module,
         trainer=trainer,
     )
+
+    trainer.fit(lit_module, datamodule=data_module)
 
     if config.test:
         trainer.test(lit_module, ckpt_path="best", datamodule=data_module)

@@ -42,13 +42,13 @@ hydra:
           value_type: int
           bounds: [ 1, 6 ]
         lit.unfreeze_backbone_epoch_start:
-          type: range
+          type: choice  # note choice
           value_type: int
-          bounds: [ 0, 2 ]
+          bounds: [ 0, 1 ]
         lit.unfreeze_backbone_epoch_duration:
           type: range
           value_type: int
-          bounds: [ 0, 2 ]
+          bounds: [ 0, 4 ]
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
