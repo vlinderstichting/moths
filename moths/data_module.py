@@ -19,12 +19,6 @@ from moths.label_hierarchy import label_hierarchy_from_file
 log = logging.getLogger("MOTHS")
 
 
-class WeightedSamplingMode(Enum):
-    NONE = "none"
-    FREQ = "freq"  # based on frequency
-    ROOT = "root"  # in between frequency and none by take the square root of the sum
-
-
 @dataclass
 class DataConfig(DictConfig):
     data_path: str
@@ -41,7 +35,8 @@ class DataConfig(DictConfig):
     pin_memory: bool
 
     min_samples: int
-    weighted_sampling: WeightedSamplingMode
+    weighted_sampling: bool
+    weighted_sampling_fraction: float
 
 
 class DataModule(pl.LightningDataModule):
@@ -114,14 +109,15 @@ class DataModule(pl.LightningDataModule):
             stratify=val_test_targets,
         )
 
-        if self.config.weighted_sampling != WeightedSamplingMode.NONE:
+        if self.config.weighted_sampling and self.config.weighted_sampling_fraction > 0:
             train_targets = [full_targets[x] for x in train_indices]
             targets_unique, targets_counts = np.unique(
                 train_targets, return_counts=True
             )
-            targets_weight_per_target = 1 / (targets_counts / targets_counts.sum())
-            if self.config.weighted_sampling == WeightedSamplingMode.ROOT:
-                targets_weight_per_target = np.sqrt(targets_weight_per_target)
+            targets_weight_per_target = targets_counts.sum() / targets_counts
+            targets_weight_per_target = (
+                targets_weight_per_target ** self.config.weighted_sampling_fraction
+            )
             target_weight_map = {
                 targets_unique[i]: targets_weight_per_target[i]
                 for i in range(len(targets_unique))

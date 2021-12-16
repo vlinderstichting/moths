@@ -24,11 +24,15 @@ hydra:
         data.weighted_sampling:
           type: choice
           value_type: str
-          values: [ NONE, FREQ, ROOT ]
+          values: [ true, false ]
+        data.weighted_sampling_fraction:
+          type: range
+          value_type: float
+          bounds: [ 0.0, 0.1 ]
         model.zoo_name:
           type: choice
           value_type: str
-          values: [ efficientnet_b7, resnet152, regnet_x_32gf ]
+          values: [ efficientnet_b7, resnet152 ]
         lit.loss.label_smoothing:
           type: range
           value_type: float
@@ -48,7 +52,7 @@ hydra:
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
-          bounds: [ 0.0, 1.0 ]
+          bounds: [ 0.0, 0.5 ]
         trainer.instance.precision:
           type: choice
           value_type: str
