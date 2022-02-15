@@ -32,7 +32,7 @@ hydra:
         model.zoo_name:
           type: choice
           value_type: str
-          values: [ efficientnet_b7, resnet152 ]
+          values: [ efficientnet_b7 ]
         lit.loss.label_smoothing:
           type: range
           value_type: float
@@ -52,8 +52,8 @@ hydra:
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
-          bounds: [ 0.0, 0.5 ]
+          bounds: [ 0.0, 0.2 ]
         trainer.instance.precision:
           type: choice
           value_type: str
-          values: [ 16, 32 ]
+          values: [ 32 ]
