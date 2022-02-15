@@ -109,12 +109,6 @@ classification:
 1. `data.min_samples`: specifies how many samples a class (species) should have, the
    classes that do not meet this lower bound are bundled into the `other` class
 2. `lit.loss_weights`: a list of 4 values used to weigh the loss of each label
-3. `data.weighted_sampling`: specifies how to sample during training
-    1. `NONE`: no weighted sampling, every sample is presented once each epoch
-    2. `FREQ`: weights correct for the class frequency to create a perfectly balanced
-       dataset
-    3. `ROOT`: weights are the inverse of the root of the class frequency to create a
-       'freq-lite' sampling
 
 # Selected features
 
