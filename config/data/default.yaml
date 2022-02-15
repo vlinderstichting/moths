@@ -2,7 +2,7 @@ data_path: /home/vlinderstichting/Data/moths/artifacts/image_folder
 label_hierarchy_file: /home/vlinderstichting/Data/moths/data/family.csv
 
 test_fraction: 0.1
-batch_size: 256
+batch_size: 128
 num_workers: 6
 pin_memory: true
 min_samples: 300
