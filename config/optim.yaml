@@ -52,7 +52,7 @@ hydra:
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
-          bounds: [ 0.0, 0.05 ]
+          bounds: [ 0.0, 0.3 ]
         trainer.instance.precision:
           type: choice
           value_type: str
