@@ -1,21 +1,21 @@
 optimizer:
   _target_: torch.optim.Adam
-  lr: 0.0003
+  lr: 0.0022908676527677745
   weight_decay: 0.0
 
 loss:
   _target_: torch.nn.CrossEntropyLoss
-  label_smoothing: 0.0
+  label_smoothing: 0.003932545799762011
 
 loss_weights:
-  - 6
+  - 5
   - 1
   - 1
   - 1
 
-unfreeze_backbone_epoch_start: 0
-unfreeze_backbone_epoch_duration: 0
-unfreeze_backbone_percentage: 0.0
+unfreeze_backbone_epoch_start: 2
+unfreeze_backbone_epoch_duration: 1
+unfreeze_backbone_percentage: 0.35
 
 metrics:
   - _target_: torchmetrics.Accuracy
