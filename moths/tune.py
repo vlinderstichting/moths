@@ -26,17 +26,17 @@ def tune(
     )
 
     # lr
-    # lr_result: _LRFinder = tuner.lr_find(lit_module, datamodule=data_module)
-    # new_lr = lr_result.suggestion()
-    # if new_lr is not None:
-    #     lit_module.lr = new_lr
-    #     log.info(
-    #         f"tuner set the learning rate from {config.lit.optimizer.lr} to {lit_module.lr}"
-    #     )
-    # else:
-    #     log.warning(
-    #         f"could not auto tune lr, leaving the learning rate at {lit_module.lr}"
-    #     )
+    lr_result: _LRFinder = tuner.lr_find(lit_module, datamodule=data_module)
+    new_lr = lr_result.suggestion()
+    if new_lr is not None:
+        lit_module.lr = new_lr
+        log.info(
+            f"tuner set the learning rate from {config.lit.optimizer.lr} to {lit_module.lr}"
+        )
+    else:
+        log.warning(
+            f"could not auto tune lr, leaving the learning rate at {lit_module.lr}"
+        )
 
     # todo: save the image plot to wandb
 
