@@ -29,10 +29,10 @@ hydra:
           type: range
           value_type: float
           bounds: [ 0.0, 0.1 ]
-        model.zoo_name:
-          type: choice
-          value_type: str
-          values: [ efficientnet_b7 ]
+#        model.zoo_name:
+#          type: choice
+#          value_type: str
+#          values: [ efficientnet_b7 ]
         lit.loss.label_smoothing:
           type: range
           value_type: float
@@ -40,11 +40,11 @@ hydra:
         lit.loss_weights.0:
           type: range
           value_type: int
-          bounds: [ 1, 6 ]
-        lit.unfreeze_backbone_epoch_start:
-          type: range
-          value_type: int
-          bounds: [ 0, 2 ]
+          bounds: [ 1, 10 ]
+#        lit.unfreeze_backbone_epoch_start:
+#          type: range
+#          value_type: int
+#          bounds: [ 0, 2 ]
         lit.unfreeze_backbone_epoch_duration:
           type: range
           value_type: int
@@ -52,8 +52,4 @@ hydra:
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
-          bounds: [ 0.0, 0.3 ]
-        trainer.instance.precision:
-          type: choice
-          value_type: str
-          values: [ 32 ]
+          bounds: [ 0.0, 0.5 ]
