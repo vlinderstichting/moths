@@ -6,7 +6,7 @@ defaults:
 hydra:
   sweeper:
     ax_config:
-      max_trials: 10
+      max_trials: 4
 
       experiment:
         minimize: true
