@@ -13,9 +13,9 @@ loss_weights:
   - 1
   - 1
 
-unfreeze_backbone_epoch_start: 2
-unfreeze_backbone_epoch_duration: 1
-unfreeze_backbone_percentage: 0.35
+unfreeze_backbone_epoch_start: 1
+unfreeze_backbone_epoch_duration: 4
+unfreeze_backbone_percentage: 0.4
 
 metrics:
   - _target_: torchmetrics.Accuracy
