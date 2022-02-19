@@ -20,15 +20,15 @@ hydra:
         data.min_samples:
           type: range
           value_type: int
-          bounds: [ 100, 500 ]
-        data.weighted_sampling:
-          type: choice
-          value_type: bool
-          values: [ true, false ]
-        data.weighted_sampling_fraction:
-          type: range
-          value_type: float
-          bounds: [ 0.0, 0.1 ]
+          bounds: [ 100, 1000 ]
+#        data.weighted_sampling:
+#          type: choice
+#          value_type: bool
+#          values: [ true, false ]
+#        data.weighted_sampling_fraction:
+#          type: range
+#          value_type: float
+#          bounds: [ 0.0, 0.1 ]
 #        model.zoo_name:
 #          type: choice
 #          value_type: str
@@ -52,4 +52,4 @@ hydra:
         lit.unfreeze_backbone_percentage:
           type: range
           value_type: float
-          bounds: [ 0.0, 0.5 ]
+          bounds: [ 0.0, 0.6 ]
