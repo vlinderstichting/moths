@@ -65,6 +65,7 @@ def train(config: Config) -> None:
         trainer=trainer,
     )
 
+    # todo: catch 1 keyboard interrupt
     trainer.fit(lit_module, datamodule=data_module)
 
     if config.test:

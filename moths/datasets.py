@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
-import numpy as np
 from torch import Tensor, tensor
 from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import find_classes
