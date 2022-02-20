@@ -226,6 +226,7 @@ class LitModule(pl.LightningModule):
     def on_train_epoch_start(self):
         self._clear_metrics("train")
         self._unfreeze_backbone_from_config()
+        # todo: if anything extra is unfrozen, redo the learning rate tuning
 
     def training_step(
         self, batch: Tuple[Tensor, Tensor], batch_idx: int
