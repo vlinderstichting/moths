@@ -69,7 +69,7 @@ configuration files. They are recognizable by the hydra reserved key `_target_` 
 class reference.
 
 If wandb is set up and the `WandbLogger` is specified in the `training.loggers` config,
-then all metrics are automatically logged to wandb.
+then all metrics are automatically logged to [wandb](https://wandb.ai/butterflies).
 
 # Data transformations
 
@@ -83,12 +83,14 @@ train_transforms:
   - _target_: torchvision.transforms.ToTensor
 ```
 
+They are instantiated and composed into a final transformation like this:
+
 ```python
 Compose([instantiate(c) for c in config.data.train_transforms])
 ```
 
-More a more control you can build your own transformations and instantiate them
-via `moths.my_transformation.MyTransformation`.
+For more control you can build your own transformations and instantiate them
+directly.
 
 To override or hyperparameter optimize a value in a list, you have to specify the
 index (0 based) in the name:
@@ -110,14 +112,10 @@ classification:
    classes that do not meet this lower bound are bundled into the `other` class
 2. `lit.loss_weights`: a list of 4 values used to weigh the loss of each label
 
-# Selected features
+# Unfreezing
 
-Some non-obvious configuration options are:
-
-- gradual unfreezing: By default the backbone is completely frozen and only the
-  classification layer trained. This can be changed via 3 hyperparameters:
-    1. `lit.unfreeze_backbone_epoch_start`: at what epoch start unfreezing
-    2. `lit.unfreeze_backbone_epoch_duration`: how many epochs it takes to unfreeze
-    3. `lit.unfreeze_backbone_percentage`: how many layers are unfrozen at the end
-
-- todo: mixup, cutmix
+By default, the backbone is completely frozen and only the classification layer trained.
+This can be changed via 3 hyperparameters:
+1. `lit.unfreeze_backbone_epoch_start`: at what epoch start unfreezing
+2. `lit.unfreeze_backbone_epoch_duration`: how many epochs it takes to unfreeze
+3. `lit.unfreeze_backbone_percentage`: how many layers are unfrozen at the end
