@@ -5,7 +5,7 @@ test_fraction: 0.1
 batch_size: 128
 num_workers: 6
 pin_memory: true
-min_samples: 300
+min_samples: 50
 weighted_sampling: false
 weighted_sampling_fraction: 0.0
 
