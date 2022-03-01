@@ -65,8 +65,11 @@ def train(config: Config) -> None:
         trainer=trainer,
     )
 
-    # todo: catch keyboard interrupt
-    trainer.fit(lit_module, datamodule=data_module)
+    try:
+        trainer.fit(lit_module, datamodule=data_module)
+    except (RuntimeError, KeyboardInterrupt) as e:
+        log.warning(e)
+        log.info("continue train script")
 
     if config.test:
         trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
