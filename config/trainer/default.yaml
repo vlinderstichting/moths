@@ -29,7 +29,7 @@ loggers:
   wandb:
     _target_: pytorch_lightning.loggers.wandb.WandbLogger
     entity: "butterflies"
-    project: "butterflies"
+    project: "session-a"
     offline: false
     id: null # pass correct id to resume experiment!
     log_model: false
