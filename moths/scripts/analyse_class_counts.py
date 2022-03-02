@@ -34,6 +34,8 @@ def analyse(config: Config) -> None:
         f"{len(label_hierarchy.genuses) - 1}."
     )
 
+    breakpoint()
+
 
 if __name__ == "__main__":
     analyse()
