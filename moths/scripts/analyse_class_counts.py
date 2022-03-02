@@ -23,7 +23,7 @@ def analyse(config: Config) -> None:
     data_source_path = resolve_config_path(config.data.data_path)
 
     label_hierarchy = label_hierarchy_from_file(
-        label_hierarchy_path, data_source_path, config.min_samples
+        label_hierarchy_path, data_source_path, config.data.min_samples
     )
 
     log.info(
