@@ -13,7 +13,6 @@ from torch import Tensor, nn, tensor
 from torchmetrics import Metric
 
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
-from moths.mix import mix_loss, mixup_batch
 from moths.model import Model
 
 log = logging.getLogger("MOTHS")
@@ -24,18 +23,6 @@ BATCH_OUTPUT = Dict[
 ]  # one for every label and "loss" for loss
 
 PHASES = ["train", "val", "test"]
-
-
-class MixMode(Enum):
-    MIXUP = "mixup"
-    CUTMIX = "cutmix"
-
-
-@dataclass
-class MixConfig:
-    mode: MixMode
-    probability: float
-    alpha: float
 
 
 @dataclass
@@ -53,8 +40,6 @@ class LitConfig:
     scheduler: Optional[Any] = None
     scheduler_interval: str = "None"
 
-    data_mix: Optional[MixConfig] = None
-
 
 class LitModule(pl.LightningModule):
     """
@@ -69,7 +54,6 @@ class LitModule(pl.LightningModule):
         self.config = config
         self.model = model
         self.label_hierarchy = label_hierarchy
-        self.use_mix = config.data_mix is not None
         self.lr = config.optimizer.lr
 
         def instantiate_metric(config: DictConfig, label: str):
@@ -120,16 +104,8 @@ class LitModule(pl.LightningModule):
 
     def _step(self, batch: Tuple[Tensor, Tensor], phase: str) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
-
-        if self.use_mix and phase == "train":
-            x, ya, yb, l = mixup_batch(
-                x, y, self.config.data_mix.probability, self.config.data_mix.alpha
-            )
-            y_hat = self.model(x)
-            loss = mix_loss(self.loss_fn, y_hat, ya, yb, l)
-        else:
-            y_hat = self.model(x)
-            loss = self.loss_fn(y_hat, y)
+        y_hat = self.model(x)
+        loss = self.loss_fn(y_hat, y)
 
         self.log(f"{phase}-loss", loss.detach())
 
