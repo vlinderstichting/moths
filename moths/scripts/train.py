@@ -11,7 +11,6 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-from moths.config import prepare_config
 from moths.data_module import DataConfig, DataModule
 from moths.lit_module import LitConfig, LitModule
 from moths.logging import log_hyperparameters

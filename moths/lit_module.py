@@ -1,8 +1,6 @@
 import itertools
 import logging
 from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -272,19 +270,17 @@ class LitModule(pl.LightningModule):
         batch: Tuple[Tensor, Tensor],
         batch_idx: int,
         dataloader_idx: Optional[int] = None,
-    ) -> BATCH_OUTPUT:
-        x, y = self._transform_batch(batch)
+    ) -> None:
+        x, _ = self._transform_batch(batch)
         y_hat = self.model(x)
 
         for sample_i in range(x.shape[0]):
             sample_x = x[sample_i]
-            sample_y = y[:, sample_i]
             sample_y_hat = [
                 torch.argmax(y_hat[i][sample_i]) for i in range(len(LABELS))
             ]
             save_prediction(
                 sample_x,
-                sample_y,
                 sample_y_hat,
                 self.label_hierarchy,
                 self.predict_path,

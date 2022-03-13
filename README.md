@@ -128,7 +128,9 @@ for which the label is known) outside the context of the training loop.
 The term inference will be used to indicate running the model on data for which no label
 is known in a more production setting.
 
-## save the production label hiearchy file:
+## todo: create better evaluation metric and tables (confusion matrices)
+
+## save the production label hierarchy file:
 
 ## todo: save this together with the checkpoint file
 

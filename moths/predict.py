@@ -1,7 +1,6 @@
 import uuid
 from pathlib import Path
 from typing import List
-from uuid import UUID
 
 import numpy as np
 from PIL.Image import Image, fromarray
@@ -12,19 +11,17 @@ from moths.label_hierarchy import LabelHierarchy
 
 def save_prediction(
     x: Tensor,
-    y: Tensor,
     y_hat: List[Tensor],
     label_hierarchy: LabelHierarchy,
     path: Path,
 ) -> None:
-    """
+    """Save an image into a folder with the name of the predicted species.
 
     Args:
-        x:
-        y:
-        y_hat:
-        label_hierarchy:
-        path:
+        x: CHW tensor of a single image
+        y_hat: predicted class per level,
+        label_hierarchy: the used label hierarchy by the model (for the mapping of int to class name)
+        path: where to write the images to
     """
     x = x.detach().cpu().numpy()
     y_hat = [int(pred.detach().cpu().numpy()) for pred in y_hat]
