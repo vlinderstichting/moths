@@ -1,5 +1,6 @@
 import logging
 import pickle
+from dataclasses import dataclass
 from pathlib import Path
 
 import hydra
@@ -18,18 +19,23 @@ from moths.trainer import get_trainer
 log = logging.getLogger("MOTHS")
 
 
+@dataclass
+class PredictConfig(Config):
+    artifact_path: str
+
+
 cs = ConfigStore.instance()
 cs.store(name="code_config", node=Config)
 
 
 @hydra.main(config_path="../../config", config_name=CONFIG_NAME)
-def predict(config: Config) -> None:
+def predict(config: PredictConfig) -> None:
     seed_everything(config.seed, workers=True)
     torch.backends.cudnn.benchmark = True
 
-    artifact_path = resolve_config_path(Path("test_data"))
+    artifact_path = resolve_config_path(config.artifact_path)
     label_artifact_path = artifact_path / "label_hierarchy.pkl"
-    ckpt_path = artifact_path / "test.ckpt"
+    ckpt_path = artifact_path / "weights.ckpt"
 
     with label_artifact_path.open("rb") as f:
         label_hierarchy: LabelHierarchy = pickle.load(f)
