@@ -89,8 +89,7 @@ They are instantiated and composed into a final transformation like this:
 Compose([instantiate(c) for c in config.data.train_transforms])
 ```
 
-For more control you can build your own transformations and instantiate them
-directly.
+For more control you can build your own transformations and instantiate them directly.
 
 To override or hyperparameter optimize a value in a list, you have to specify the
 index (0 based) in the name:
@@ -116,6 +115,32 @@ classification:
 
 By default, the backbone is completely frozen and only the classification layer trained.
 This can be changed via 3 hyperparameters:
+
 1. `lit.unfreeze_backbone_epoch_start`: at what epoch start unfreezing
 2. `lit.unfreeze_backbone_epoch_duration`: how many epochs it takes to unfreeze
 3. `lit.unfreeze_backbone_percentage`: how many layers are unfrozen at the end
+
+# Predict & Inference
+
+The term predict is used to run the model on one of the data module data loaders (data
+for which the label is known) outside the context of the training loop.
+
+The term inference will be used to indicate running the model on data for which no label
+is known in a more production setting.
+
+## save the production label hiearchy file:
+
+## todo: save this together with the checkpoint file
+
+```python
+import pickle
+from pathlib import Path
+from moths.label_hierarchy import label_hierarchy_from_file
+
+label_hierarchy_path = Path("/home/vlinderstichting/Data/moths/data/family.csv")
+data_source_path = Path("/home/vlinderstichting/Data/moths/artifacts/image_folder")
+label_hierarchy = label_hierarchy_from_file(label_hierarchy_path, data_source_path, 50)
+
+with Path("/tmp/label_hierarchy.pkl").open('wb') as f:
+    pickle.dump(label_hierarchy_path, f, protocol=4)
+```

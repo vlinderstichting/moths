@@ -2,6 +2,7 @@ import itertools
 import logging
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -12,8 +13,10 @@ from omegaconf import DictConfig
 from torch import Tensor, nn, tensor
 from torchmetrics import Metric
 
+from moths.config import resolve_config_path
 from moths.label_hierarchy import LABELS, LabelHierarchy, get_classes_by_label
 from moths.model import Model
+from moths.predict import save_prediction
 
 log = logging.getLogger("MOTHS")
 
@@ -40,6 +43,8 @@ class LitConfig:
     scheduler: Optional[Any] = None
     scheduler_interval: str = "None"
 
+    predict_path: Optional[str] = None
+
 
 class LitModule(pl.LightningModule):
     """
@@ -55,6 +60,8 @@ class LitModule(pl.LightningModule):
         self.model = model
         self.label_hierarchy = label_hierarchy
         self.lr = config.optimizer.lr
+
+        self.predict_path = resolve_config_path(config.predict_path)
 
         def instantiate_metric(config: DictConfig, label: str):
             num_classes = len(get_classes_by_label(label_hierarchy, label))
@@ -85,9 +92,9 @@ class LitModule(pl.LightningModule):
 
         for phase, label in itertools.product(PHASES, LABELS):
             for metric in self.metrics[phase][label]:
-                metric.to("cuda")
+                metric.to(self.device)
 
-        self._loss_weights = self._loss_weights.to("cuda")
+        self._loss_weights = self._loss_weights.to(self.device)
 
     def loss_fn(self, y_hat: Tensor, y: Tensor) -> Tensor:
         # torch.clone because otherwise it crashes, bug?!
@@ -259,3 +266,26 @@ class LitModule(pl.LightningModule):
                 "interval": self.config.scheduler_interval,
             },
         }
+
+    def predict_step(
+        self,
+        batch: Tuple[Tensor, Tensor],
+        batch_idx: int,
+        dataloader_idx: Optional[int] = None,
+    ) -> BATCH_OUTPUT:
+        x, y = self._transform_batch(batch)
+        y_hat = self.model(x)
+
+        for sample_i in range(x.shape[0]):
+            sample_x = x[sample_i]
+            sample_y = y[:, sample_i]
+            sample_y_hat = [
+                torch.argmax(y_hat[i][sample_i]) for i in range(len(LABELS))
+            ]
+            save_prediction(
+                sample_x,
+                sample_y,
+                sample_y_hat,
+                self.label_hierarchy,
+                self.predict_path,
+            )

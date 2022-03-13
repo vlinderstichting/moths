@@ -42,7 +42,6 @@ cs.store(name="code_config", node=Config)
 
 @hydra.main(config_path="../../config", config_name=CONFIG_NAME)
 def train(config: Config) -> None:
-    prepare_config(config)
     seed_everything(config.seed, workers=True)
 
     torch.backends.cudnn.benchmark = True
