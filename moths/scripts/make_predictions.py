@@ -25,7 +25,7 @@ class PredictConfig(Config):
 
 
 cs = ConfigStore.instance()
-cs.store(name="code_config", node=Config)
+cs.store(name="code_config", node=PredictConfig)
 
 
 @hydra.main(config_path="../../config", config_name=CONFIG_NAME)
