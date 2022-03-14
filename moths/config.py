@@ -4,30 +4,6 @@ from typing import Union
 from omegaconf import DictConfig, OmegaConf
 
 
-def prepare_config(config: DictConfig) -> None:
-    """Mutate the config by applying logic.
-
-    Currently it does:
-    - when in debug mode, set the config to a single thread cpu process
-
-    """
-    OmegaConf.set_struct(config, False)
-
-    # todo: maybe loop over all and resolve the path if settings ends with 'path(s)'?
-
-    # if config.debug:
-    #     # config.trainer.instance.fast_dev_run = True
-    #     # config.trainer.instance.gpus = 0
-    #     config.data.num_workers = 0
-    #     # remove wandb
-    #
-    # if config.trainer.instance.gpus == 0:
-    #     config.lit.device = "cpu"
-    #     config.data.pin_memory = False
-
-    OmegaConf.set_struct(config, True)
-
-
 def resolve_config_path(path: Union[Path, str]) -> Path:
     """Get the absolute of paths specified in config.
 

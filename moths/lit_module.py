@@ -1,11 +1,15 @@
 import itertools
 import logging
+import pickle
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pytorch_lightning
 import pytorch_lightning as pl
 import torch
+import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from torch import Tensor, nn, tensor
@@ -203,6 +207,10 @@ class LitModule(pl.LightningModule):
             self.current_epoch, [epoch_start - 1, epoch_end], [0, final_fraction]
         )
         self._unfreeze_backbone(float(fraction))
+
+    def on_train_start(self) -> None:
+        with Path("label_hierarchy.pkl").open("wb") as f:
+            pickle.dump(self.label_hierarchy, f, protocol=4)
 
     def on_train_epoch_start(self):
         self._clear_metrics("train")
