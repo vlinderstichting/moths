@@ -320,16 +320,22 @@ class LitModule(pl.LightningModule):
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
         for level_i, label in enumerate(LABELS):
             y = np.array(
-                [b["y"][:, level_i].detach().cpu().numpy() for b in outputs[0]]
-            ).reshape(-1)
+                [
+                    x
+                    for b in outputs[0]
+                    for x in b["y"][:, level_i].detach().cpu().numpy()
+                ]
+            )
             y_hat = np.array(
-                [b["y_hat"][:, level_i].detach().cpu().numpy() for b in outputs[0]]
-            ).reshape(-1)
+                [
+                    x
+                    for b in outputs[0]
+                    for x in b["y_hat"][:, level_i].detach().cpu().numpy()
+                ]
+            )
 
             label_path_y = self.evaluation_path / f"{level_i}_{label}_y.npy"
             label_path_y_hat = self.evaluation_path / f"{level_i}_{label}_y_hat.npy"
-
-            breakpoint()
 
             np.save(str(label_path_y), y)
             np.save(str(label_path_y_hat), y_hat)
