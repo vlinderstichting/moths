@@ -1,6 +1,8 @@
 import logging
 import os
+import shutil
 from dataclasses import dataclass
+from pathlib import Path
 
 import hydra
 import torch
@@ -11,6 +13,7 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
+from moths.config import CONFIG_NAME
 from moths.data_module import DataConfig, DataModule
 from moths.lit_module import LitConfig, LitModule
 from moths.logging import log_hyperparameters
@@ -19,8 +22,6 @@ from moths.trainer import TrainerConfig, get_trainer
 from moths.tune import tune
 
 log = logging.getLogger("MOTHS")
-
-CONFIG_NAME = os.getenv("MOTHS_CONFIG", "default")
 
 
 @dataclass
@@ -46,11 +47,12 @@ def train(config: Config) -> None:
     torch.backends.cudnn.benchmark = True
 
     data_module = DataModule(config.data)
+    data_module.setup()
     model = Model(config.model, data_module.label_hierarchy)
     lit_module = LitModule(config.lit, model, data_module.label_hierarchy)
     trainer = get_trainer(config.trainer)
 
-    log.info("instantiated required objects from config")
+    log.info("instantiated objects from config")
 
     if config.tune:
         tune(config, trainer, lit_module, data_module)
@@ -67,7 +69,8 @@ def train(config: Config) -> None:
         trainer.fit(lit_module, datamodule=data_module)
     except (RuntimeError, KeyboardInterrupt) as e:
         log.warning(e)
-        log.info("continue train script")
+        log.info("Abort fitting ... ")
+        log.info("Finish up the rest of the train script ... ")
 
     if config.test:
         trainer.test(lit_module, ckpt_path="best", datamodule=data_module)
@@ -77,7 +80,19 @@ def train(config: Config) -> None:
 
     for callback in trainer.callbacks:
         if isinstance(callback, ModelCheckpoint):
-            return callback.best_model_score.detach().cpu().numpy().item()
+            current_score = callback.current_score.detach().cpu().numpy().item()
+            best_score = callback.best_model_score.detach().cpu().numpy().item()
+
+            best_model_path_src = Path(callback.best_model_path)
+            best_model_path_dst = Path(os.getcwd()) / "best.ckpt"
+
+            shutil.copy(str(best_model_path_src), str(best_model_path_dst))
+
+            log.debug(f"Last score: {current_score}")
+            log.info(f"Best score: {best_score}")
+            log.info(f"Written best weights to: {str(best_model_path_dst.absolute())}")
+
+            return best_score
 
 
 if __name__ == "__main__":

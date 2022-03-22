@@ -46,6 +46,7 @@ class LitConfig:
     scheduler_interval: str = "None"
 
     predict_path: Optional[str] = None
+    evaluation_path: Optional[str] = None
 
 
 class LitModule(pl.LightningModule):
@@ -63,7 +64,16 @@ class LitModule(pl.LightningModule):
         self.label_hierarchy = label_hierarchy
         self.lr = config.optimizer.lr
 
-        self.predict_path = resolve_config_path(config.predict_path)
+        self.predict_path = (
+            resolve_config_path(config.predict_path)
+            if config.predict_path is not None
+            else None
+        )
+        self.evaluation_path = (
+            resolve_config_path(config.evaluation_path)
+            if config.evaluation_path is not None
+            else None
+        )
 
         def instantiate_metric(config: DictConfig, label: str):
             num_classes = len(get_classes_by_label(label_hierarchy, label))
@@ -273,23 +283,53 @@ class LitModule(pl.LightningModule):
             },
         }
 
+    def on_predict_start(self) -> None:
+        if self.predict_path is None:
+            raise RuntimeError("lit.predict_path must be set to make predictions")
+        if self.evaluation_path is None:
+            raise RuntimeError("lit.evaluation_path must be set to make predictions")
+
+        self.predict_path.mkdir(parents=True, exist_ok=True)
+        self.evaluation_path.mkdir(parents=True, exist_ok=True)
+
     def predict_step(
         self,
         batch: Tuple[Tensor, Tensor],
         batch_idx: int,
         dataloader_idx: Optional[int] = None,
-    ) -> None:
-        x, _ = self._transform_batch(batch)
+    ) -> BATCH_OUTPUT:
+        x, y = self._transform_batch(batch)
         y_hat = self.model(x)
+
+        y_hat_out = []
+        y_out = torch.swapaxes(y, 0, 1)
 
         for sample_i in range(x.shape[0]):
             sample_x = x[sample_i]
             sample_y_hat = [
                 torch.argmax(y_hat[i][sample_i]) for i in range(len(LABELS))
             ]
+            y_hat_out.append(sample_y_hat)
             save_prediction(
                 sample_x,
                 sample_y_hat,
                 self.label_hierarchy,
                 self.predict_path,
             )
+
+        return {"y": y_out, "y_hat": tensor(y_hat_out)}
+
+    def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
+        for level_i, label in enumerate(LABELS):
+            y = np.array(
+                [b["y"][:, level_i].detach().cpu().numpy() for b in outputs[0]]
+            ).reshape(-1)
+            y_hat = np.array(
+                [b["y_hat"][:, level_i].detach().cpu().numpy() for b in outputs[0]]
+            ).reshape(-1)
+
+            label_path_y = self.evaluation_path / f"{level_i}_{label}_y.npy"
+            label_path_y_hat = self.evaluation_path / f"{level_i}_{label}_y_hat.npy"
+
+            np.save(str(label_path_y), y)
+            np.save(str(label_path_y_hat), y_hat)

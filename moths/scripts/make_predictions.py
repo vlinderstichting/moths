@@ -34,7 +34,7 @@ def predict(config: PredictConfig) -> None:
 
     artifact_path = resolve_config_path(config.artifact_path)
     label_artifact_path = artifact_path / "label_hierarchy.pkl"
-    ckpt_path = artifact_path / "weights.ckpt"
+    ckpt_path = artifact_path / "best.ckpt"
 
     with label_artifact_path.open("rb") as f:
         label_hierarchy: LabelHierarchy = pickle.load(f)

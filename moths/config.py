@@ -1,7 +1,10 @@
+import os
 from pathlib import Path
 from typing import Union
 
 from omegaconf import DictConfig, OmegaConf
+
+CONFIG_NAME = os.getenv("MOTHS_CONFIG", "default")
 
 
 def resolve_config_path(path: Union[Path, str]) -> Path:
