@@ -319,6 +319,7 @@ class LitModule(pl.LightningModule):
 
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
         for level_i, label in enumerate(LABELS):
+            # have to use a weird iteration because I don't now how to do stack when the last batch is different size
             y = np.array(
                 [
                     x
