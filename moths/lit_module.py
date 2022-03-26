@@ -300,10 +300,13 @@ class LitModule(pl.LightningModule):
         y_hat = self.model(x)
 
         y_hat_out = []
+        y_hat_logit_out = []
         y_out = torch.swapaxes(y, 0, 1)
 
         for sample_i in range(x.shape[0]):
             sample_x = x[sample_i]
+            sample_y_hat_logit = [y_hat[i][sample_i] for i in range(len(LABELS))]
+            y_hat_logit_out.append(sample_y_hat_logit)
             sample_y_hat = [
                 torch.argmax(y_hat[i][sample_i]) for i in range(len(LABELS))
             ]
@@ -315,7 +318,7 @@ class LitModule(pl.LightningModule):
                 self.predict_path,
             )
 
-        return {"y": y_out, "y_hat": tensor(y_hat_out)}
+        return {"y": y_out, "y_hat": tensor(y_hat_out), "y_hat_logit": y_hat_logit_out}
 
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
         for level_i, label in enumerate(LABELS):
@@ -334,9 +337,20 @@ class LitModule(pl.LightningModule):
                     for x in b["y_hat"][:, level_i].detach().cpu().numpy()
                 ]
             )
+            y_hat_logit = np.array(
+                [
+                    x
+                    for b in outputs[0]
+                    for x in b["y_hat_logit"][:, level_i].detach().cpu().numpy()
+                ]
+            )
 
             label_path_y = self.evaluation_path / f"{level_i}_{label}_y.npy"
             label_path_y_hat = self.evaluation_path / f"{level_i}_{label}_y_hat.npy"
+            label_path_y_hat_logit = (
+                self.evaluation_path / f"{level_i}_{label}_y_hat_logit.npy"
+            )
 
             np.save(str(label_path_y), y)
             np.save(str(label_path_y_hat), y_hat)
+            np.save(str(label_path_y_hat_logit), y_hat_logit)
