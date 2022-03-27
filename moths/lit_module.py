@@ -305,7 +305,7 @@ class LitModule(pl.LightningModule):
         outputs = cast(List[BATCH_OUTPUT], outputs[0])
 
         for level_i, label in enumerate(LABELS):
-            for key in ["y", "y_hat", "y_hat_logit"]:
+            for key in ["y", "y_hat"]:
                 # have to use a weird iteration because I don't now how to do stack when the last batch is different size
                 array = np.array(
                     [
@@ -320,3 +320,12 @@ class LitModule(pl.LightningModule):
                     / f"{level_i}_{label}_{key}.npy"
                 )
                 np.save(str(path), array)
+
+            key = "y_hat_logit"
+            array = np.array(
+                [x[0].float().detach().cpu().numpy() for b in outputs for x in b[key]]
+            )
+            path = (
+                self.prediction_output_path / "arrays" / f"{level_i}_{label}_{key}.npy"
+            )
+            np.save(str(path), array)
