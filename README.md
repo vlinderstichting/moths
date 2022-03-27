@@ -9,13 +9,13 @@ Repository for training &amp; serving a classification model for moth species.
 
 Run the following command:
 
-```console
-python moths/scripts/valid_data_paths_symbolic.py test_data/ test_data/source_a test_data/source_b
+```bash
+python scripts/valid_data_paths_symbolic.py test_data/ test_data/source_a test_data/source_b
 ```
 
 The result will look as follows:
 
-```console
+```bash
 .
 ├── image_folder
 │   ├── Species A
@@ -43,9 +43,9 @@ environment variable `MOTHS_CONFIG` (by default set to `default`).
 
 Train by running:
 
-```console
-python moths/scripts/train.py
-MOTHS_CONFIG=optim python moths/scripts/train.py -m  # specify multi run when using optim.yaml
+```bash
+python moths/cmd/train.py
+MOTHS_CONFIG=optim python moths/cmd/train.py -m  # specify multi run when using optim.yaml
 ```
 
 There are 3 predefined configuration files:
@@ -58,8 +58,8 @@ Configuration and hyperparameter optimization is set up
 with [hydra](https://hydra.cc/docs/intro/). This allows to easily override certain
 hyperparameters via the console:
 
-```console
-python moths/scripts/train.py data.batch_size=4 trainer.loggers.wandb.project=dev
+```bash
+python moths/cmd/train.py data.batch_size=4 trainer.loggers.wandb.project=dev
 ```
 
 The training loop is set up
@@ -94,8 +94,8 @@ For more control you can build your own transformations and instantiate them dir
 To override or hyperparameter optimize a value in a list, you have to specify the
 index (0 based) in the name:
 
-```console
-python moths/scripts/train.py data.train_transforms.0.size=64
+```bash
+python moths/cmd/train.py data.train_transforms.0.size=64
 ```
 
 # Multi label
@@ -126,23 +126,47 @@ The term predict is used to run the model on one of the data module data loaders
 for which the label is known) outside the context of the training loop.
 
 The term inference will be used to indicate running the model on data for which no label
-is known in a more production setting.
+is known in a production setting.
 
-## todo: create better evaluation metric and tables (confusion matrices)
+## Prediction
 
-## save the production label hierarchy file:
+A prediction must be run with 2 extra parameters; `training_output_path`
+and `lit.prediction_output_path`, like this:
 
-## todo: save this together with the checkpoint file
-
-```python
-import pickle
-from pathlib import Path
-from moths.label_hierarchy import label_hierarchy_from_file
-
-label_hierarchy_path = Path("/home/vlinderstichting/Data/moths/data/family.csv")
-data_source_path = Path("/home/vlinderstichting/Data/moths/artifacts/image_folder")
-label_hierarchy = label_hierarchy_from_file(label_hierarchy_path, data_source_path, 50)
-
-with Path("/tmp/label_hierarchy.pkl").open('wb') as f:
-    pickle.dump(label_hierarchy_path, f, protocol=4)
+```bash
+python moths/cmd/predict.py training_output_path=/training/output lit.prediction_output_path=/prediction/output
 ```
+
+It expects `label_hierarchy.pkl` and `best.ckpt` in `/training/output`. These are
+created by training, thus can be pointed directly at the output folder of a training
+run.
+
+A folder is created with the following contents:
+
+```bash
+.
+├── best.ckpt
+├── label_hierarchy.pkl
+├── images/
+└── arrays/
+```
+
+The `images` folder contains images organized by their *prediction* label. Images will
+be named as `{correct or wrong}-{random id}-{correct label if wrong}`
+eg, `wrong-40cc1705554542e1a8a38e85e807382c-Pammene ochsenheimeriana.jpg`.
+
+The `arrays` folder contains numpy arrays with the truth (int), prediction (int), and
+the logits (list of floats), per sample.
+
+Extra information on the prediction can be generated with:
+
+```bash
+python moths/scripts/evaluate_predictions.py /prediction/output
+```
+
+It will print some general statistics on the performance and create an additional
+folder `cms` that contains many confusion matrices.
+
+## Inference
+
+Not implemented.

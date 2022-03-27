@@ -82,7 +82,6 @@ def plot_cms(
             class_name=family_name,
         )
 
-        # sub_out_path = out_path / "family
         selection = family_y == family_ix
         spiecies_y_i = species_y[selection]
         spiecies_y_hat_i = species_y_hat[selection]
@@ -109,12 +108,6 @@ def plot_cms(
             [(y if y in unique_classes else big_int) for y in spiecies_y_hat_i]
         )
 
-        # if not np.array_equal(unique_classes, unique_classes_hat):
-        #     print("Skipping", family_name)
-        #     breakpoint()
-        #     continue
-
-        # breakpoint()
         cm_species_i = ConfusionMatrix(spiecies_y_i, spiecies_y_hat_i)
         cm_species_i.relabel(mapping=mapping)
 
@@ -122,16 +115,10 @@ def plot_cms(
 
         out_path_i.parent.mkdir(exist_ok=True)
 
-        # size interpolate between 6 and 16 for 2 -> 40
-
         num_species = len(mapping)
 
         plot_cm(cm_species_i, out_path_i, num_items=num_species, normalized=False)
         plot_cm(cm_species_i, out_path_i, num_items=num_species, normalized=True)
-
-        # worst performing classes
-        # test time augmentation!! will hellp a lot with the cropping of the image that are happening.
-        #
 
 
 def print_worst_performing_classes(
@@ -146,20 +133,20 @@ def print_worst_performing_classes(
 
 
 @evaluate_predictions_app.command()
-def evaluate_predictions(out_path: Path, in_path: Path) -> None:
+def evaluate_predictions(path: Path) -> None:
 
-    with (in_path / "label_hierarchy.pkl").open("rb") as f:
+    with (path / "label_hierarchy.pkl").open("rb") as f:
         label_hierarchy = pickle.load(f)
 
-    species_y = np.load(str(in_path / "0_species_y.npy"))
-    species_y_hat = np.load(str(in_path / "0_species_y_hat.npy"))
+    species_y = np.load(str(path / "arrays" / "0_species_y.npy"))
+    species_y_hat = np.load(str(path / "arrays" / "0_species_y_hat.npy"))
 
-    family_y = np.load(str(in_path / "2_family_y.npy"))
-    family_y_hat = np.load(str(in_path / "2_family_y_hat.npy"))
+    family_y = np.load(str(path / "arrays" / "2_family_y.npy"))
+    family_y_hat = np.load(str(path / "arrays" / "2_family_y_hat.npy"))
 
     print_worst_performing_classes(label_hierarchy, species_y, species_y_hat)
     plot_cms(
-        label_hierarchy, species_y, species_y_hat, family_y, family_y_hat, out_path
+        label_hierarchy, species_y, species_y_hat, family_y, family_y_hat, path / "cms"
     )
 
 

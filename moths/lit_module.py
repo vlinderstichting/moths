@@ -3,7 +3,7 @@ import logging
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 import pytorch_lightning as pl
@@ -43,8 +43,7 @@ class LitConfig:
     scheduler: Optional[Any] = None
     scheduler_interval: str = "None"
 
-    predict_path: Optional[str] = None
-    evaluation_path: Optional[str] = None
+    prediction_output_path: Optional[str] = None
 
 
 class LitModule(pl.LightningModule):
@@ -62,16 +61,11 @@ class LitModule(pl.LightningModule):
         self.label_hierarchy = label_hierarchy
         self.lr = config.optimizer.lr
 
-        self.predict_path = (
-            resolve_config_path(config.predict_path)
-            if config.predict_path is not None
+        self.prediction_output_path = (
+            resolve_config_path(config.prediction_output_path)
+            if config.prediction_output_path is not None
             else None
-        )
-        self.evaluation_path = (
-            resolve_config_path(config.evaluation_path)
-            if config.evaluation_path is not None
-            else None
-        )
+        )  # only needed for prediction, checked in the on_predict_start
 
         def instantiate_metric(config: DictConfig, label: str):
             num_classes = len(get_classes_by_label(label_hierarchy, label))
@@ -165,22 +159,6 @@ class LitModule(pl.LightningModule):
         sizes = torch.stack([o["size"] for o in outputs])
         loss = (losses * sizes).sum() / sizes.sum()
         self.log(f"epoch-{phase}-loss", loss.detach())
-
-    def _log_north_star(self, phase: str, outputs: List[BATCH_OUTPUT]):
-        return None
-        preds = (
-            torch.concat([batch["species"][0] for batch in outputs])
-            .detach()
-            .cpu()
-            .numpy()
-        )
-        targets = (
-            torch.concat([batch["species"][1] for batch in outputs])
-            .detach()
-            .cpu()
-            .numpy()
-        )
-        return None
 
     def _freeze_backbone(self):
         for p in self._backbone_parameters:
@@ -282,13 +260,13 @@ class LitModule(pl.LightningModule):
         }
 
     def on_predict_start(self) -> None:
-        if self.predict_path is None:
-            raise RuntimeError("lit.predict_path must be set to make predictions")
-        if self.evaluation_path is None:
-            raise RuntimeError("lit.evaluation_path must be set to make predictions")
+        if self.prediction_output_path is None:
+            raise RuntimeError(
+                "lit.prediction_output_path must be set to make predictions"
+            )
 
-        self.predict_path.mkdir(parents=True, exist_ok=True)
-        self.evaluation_path.mkdir(parents=True, exist_ok=True)
+        (self.prediction_output_path / "images").mkdir(parents=True, exist_ok=True)
+        (self.prediction_output_path / "arrays").mkdir(parents=True, exist_ok=True)
 
     def predict_step(
         self,
@@ -305,52 +283,40 @@ class LitModule(pl.LightningModule):
 
         for sample_i in range(x.shape[0]):
             sample_x = x[sample_i]
+            sample_y = [y[i][sample_i] for i in range(len(LABELS))]
             sample_y_hat_logit = [y_hat[i][sample_i] for i in range(len(LABELS))]
-            y_hat_logit_out.append(sample_y_hat_logit)
-            sample_y_hat = [
-                torch.argmax(y_hat[i][sample_i]) for i in range(len(LABELS))
-            ]
-            y_hat_out.append(sample_y_hat)
+            sample_y_hat = [torch.argmax(y) for y in sample_y_hat_logit]
+
             save_prediction(
                 sample_x,
+                sample_y,
                 sample_y_hat,
                 self.label_hierarchy,
-                self.predict_path,
+                (self.prediction_output_path / "images"),
             )
+
+            y_hat_out.append(sample_y_hat)
+            y_hat_logit_out.append(sample_y_hat_logit)
 
         return {"y": y_out, "y_hat": tensor(y_hat_out), "y_hat_logit": y_hat_logit_out}
 
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
+        # not sure why, but ptl returns List[List[BATCH_OUTPUT]], and puts everything in the first element
+        outputs = cast(List[BATCH_OUTPUT], outputs[0])
+
         for level_i, label in enumerate(LABELS):
-            # have to use a weird iteration because I don't now how to do stack when the last batch is different size
-            y = np.array(
-                [
-                    x
-                    for b in outputs[0]
-                    for x in b["y"][:, level_i].detach().cpu().numpy()
-                ]
-            )
-            y_hat = np.array(
-                [
-                    x
-                    for b in outputs[0]
-                    for x in b["y_hat"][:, level_i].detach().cpu().numpy()
-                ]
-            )
-            y_hat_logit = np.array(
-                [
-                    x
-                    for b in outputs[0]
-                    for x in b["y_hat_logit"][:, level_i].detach().cpu().numpy()
-                ]
-            )
-
-            label_path_y = self.evaluation_path / f"{level_i}_{label}_y.npy"
-            label_path_y_hat = self.evaluation_path / f"{level_i}_{label}_y_hat.npy"
-            label_path_y_hat_logit = (
-                self.evaluation_path / f"{level_i}_{label}_y_hat_logit.npy"
-            )
-
-            np.save(str(label_path_y), y)
-            np.save(str(label_path_y_hat), y_hat)
-            np.save(str(label_path_y_hat_logit), y_hat_logit)
+            for key in ["y", "y_hat", "y_hat_logit"]:
+                # have to use a weird iteration because I don't now how to do stack when the last batch is different size
+                array = np.array(
+                    [
+                        x
+                        for b in outputs
+                        for x in b[key][:, level_i].detach().cpu().numpy()
+                    ]
+                )
+                path = (
+                    self.prediction_output_path
+                    / "arrays"
+                    / f"{level_i}_{label}_{key}.npy"
+                )
+                np.save(str(path), array)

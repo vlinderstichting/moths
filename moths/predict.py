@@ -11,6 +11,7 @@ from moths.label_hierarchy import LabelHierarchy
 
 def save_prediction(
     x: Tensor,
+    y: List[Tensor],
     y_hat: List[Tensor],
     label_hierarchy: LabelHierarchy,
     path: Path,
@@ -25,9 +26,15 @@ def save_prediction(
     """
     x = x.detach().cpu().numpy()
     y_hat = [int(pred.detach().cpu().numpy()) for pred in y_hat]
-    species = label_hierarchy.classes[y_hat[0]]
+    species_pred = label_hierarchy.classes[y_hat[0]]
+    species_true = label_hierarchy.classes[y[0]]
 
-    image_path = path / species / f"{uuid.uuid4().hex}.jpg"
+    is_correct = species_pred == species_true
+
+    prefix = "correct " if is_correct else "wrong "
+    suffix = "" if is_correct else f" ({species_true})"
+
+    image_path = path / species_pred / f"{prefix}{uuid.uuid4().hex}{suffix}.jpg"
     image_path.parent.mkdir(parents=True, exist_ok=True)
 
     # todo: this needs to be not hardcoded
