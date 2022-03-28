@@ -279,7 +279,6 @@ class LitModule(pl.LightningModule):
 
         y_hat_out = []
         logits_out = []
-        features_out = []
         y_out = torch.swapaxes(y, 0, 1)
 
         for sample_i in range(x.shape[0]):
@@ -287,7 +286,6 @@ class LitModule(pl.LightningModule):
             sample_y = [y[i][sample_i] for i in range(len(LABELS))]
             sample_logits = [y_hat[i][sample_i] for i in range(len(LABELS))]
             sample_y_hat = [torch.argmax(y) for y in sample_logits]
-            sample_features = [features[i][sample_i] for i in range(len(LABELS))]
 
             save_prediction(
                 sample_x,
@@ -299,21 +297,25 @@ class LitModule(pl.LightningModule):
 
             y_hat_out.append(sample_y_hat)
             logits_out.append(sample_logits)
-            features_out.append(sample_features)
 
         return {
             "y": y_out,
             "y_hat": tensor(y_hat_out),
             "logits": logits_out,
-            "features": tensor(features_out),
+            "features": features,
         }
 
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
         # not sure why, but ptl returns List[List[BATCH_OUTPUT]], and puts everything in the first element
         outputs = cast(List[BATCH_OUTPUT], outputs[0])
 
+        key = "features"
+        array = torch.cat([b[key] for b in outputs]).float().detach().cpu().numpy()
+        path = self.prediction_output_path / "arrays" / f"{key}.npy"
+        np.save(str(path), array)
+
         for level_i, label in enumerate(LABELS):
-            for key in ["y", "y_hat", "features"]:
+            for key in ["y", "y_hat"]:
                 # have to use a weird iteration because I don't now how to do stack when the last batch is different size
                 array = np.array(
                     [
@@ -329,7 +331,7 @@ class LitModule(pl.LightningModule):
                 )
                 np.save(str(path), array)
 
-            key = "y_hat_logit"
+            key = "logits"
             array = np.array(
                 [x[0].float().detach().cpu().numpy() for b in outputs for x in b[key]]
             )
