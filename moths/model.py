@@ -56,8 +56,6 @@ class Model(nn.Module):
         model_fn = getattr(models, config.zoo_name)
         self.backbone: nn.Module = model_fn(pretrained=config.pretrained)
 
-        # children = _get_children(self.backbone, [])
-
         in_features = _get_in_features_and_set_identify(self.backbone)
 
         self.fc_class = nn.Linear(in_features, len(hierarchy.classes))
@@ -65,7 +63,7 @@ class Model(nn.Module):
         self.fc_family = nn.Linear(in_features, len(hierarchy.families))
         self.fc_genus = nn.Linear(in_features, len(hierarchy.genuses))
 
-    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         features = self.backbone(x)
 
         klass = self.fc_class(features)
@@ -73,4 +71,4 @@ class Model(nn.Module):
         family = self.fc_family(features)
         genus = self.fc_genus(features)
 
-        return klass, group, family, genus
+        return klass, group, family, genus, features

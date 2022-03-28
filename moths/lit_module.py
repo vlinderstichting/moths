@@ -106,7 +106,7 @@ class LitModule(pl.LightningModule):
 
         return torch.mean(torch.stack(losses) * self._loss_weights)
 
-    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         return self.model.forward(x)
 
     def _transform_batch(self, batch: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
@@ -115,7 +115,7 @@ class LitModule(pl.LightningModule):
 
     def _step(self, batch: Tuple[Tensor, Tensor], phase: str) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
-        y_hat = self.model(x)
+        *y_hat, _ = self.model(x)
         loss = self.loss_fn(y_hat, y)
 
         self.log(f"{phase}-loss", loss.detach())
@@ -275,17 +275,19 @@ class LitModule(pl.LightningModule):
         dataloader_idx: Optional[int] = None,
     ) -> BATCH_OUTPUT:
         x, y = self._transform_batch(batch)
-        y_hat = self.model(x)
+        *y_hat, features = self.model(x)
 
         y_hat_out = []
-        y_hat_logit_out = []
+        logits_out = []
+        features_out = []
         y_out = torch.swapaxes(y, 0, 1)
 
         for sample_i in range(x.shape[0]):
             sample_x = x[sample_i]
             sample_y = [y[i][sample_i] for i in range(len(LABELS))]
-            sample_y_hat_logit = [y_hat[i][sample_i] for i in range(len(LABELS))]
-            sample_y_hat = [torch.argmax(y) for y in sample_y_hat_logit]
+            sample_logits = [y_hat[i][sample_i] for i in range(len(LABELS))]
+            sample_y_hat = [torch.argmax(y) for y in sample_logits]
+            sample_features = [features[i][sample_i] for i in range(len(LABELS))]
 
             save_prediction(
                 sample_x,
@@ -296,16 +298,22 @@ class LitModule(pl.LightningModule):
             )
 
             y_hat_out.append(sample_y_hat)
-            y_hat_logit_out.append(sample_y_hat_logit)
+            logits_out.append(sample_logits)
+            features_out.append(sample_features)
 
-        return {"y": y_out, "y_hat": tensor(y_hat_out), "y_hat_logit": y_hat_logit_out}
+        return {
+            "y": y_out,
+            "y_hat": tensor(y_hat_out),
+            "logits": logits_out,
+            "features": tensor(features_out),
+        }
 
     def on_predict_epoch_end(self, outputs: List[BATCH_OUTPUT]) -> None:
         # not sure why, but ptl returns List[List[BATCH_OUTPUT]], and puts everything in the first element
         outputs = cast(List[BATCH_OUTPUT], outputs[0])
 
         for level_i, label in enumerate(LABELS):
-            for key in ["y", "y_hat"]:
+            for key in ["y", "y_hat", "features"]:
                 # have to use a weird iteration because I don't now how to do stack when the last batch is different size
                 array = np.array(
                     [
