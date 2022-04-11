@@ -56,9 +56,8 @@ def predict(config: PredictConfig) -> None:
     trainer = get_trainer(config.trainer)
     trainer.predict(model=lit_module, dataloaders=data_module.val_dataloader())
 
-    predict_output_path = cast(
-        str, config.lit.prediction_output_path
-    )  # will raise in the predict of lit module if it is None
+    # will raise in the predict of lit module if it is None
+    predict_output_path = cast(str, config.lit.prediction_output_path)
 
     predict_path = resolve_config_path(predict_output_path)
     label_hierarchy_dst_path = predict_path / "label_hierarchy.pkl"

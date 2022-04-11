@@ -29,6 +29,12 @@ PHASES = ["train", "val", "test"]
 
 
 @dataclass
+class LitPredictionConfig:
+    output_path: str
+    write_images: bool
+
+
+@dataclass
 class LitConfig:
     loss: Any
     loss_weights: Tuple[float, float, float, float]
@@ -44,6 +50,7 @@ class LitConfig:
     scheduler_interval: str = "None"
 
     prediction_output_path: Optional[str] = None
+    prediction_write_images: bool = True
 
 
 class LitModule(pl.LightningModule):
@@ -287,13 +294,14 @@ class LitModule(pl.LightningModule):
             sample_logits = [y_hat[i][sample_i] for i in range(len(LABELS))]
             sample_y_hat = [torch.argmax(y) for y in sample_logits]
 
-            save_prediction(
-                sample_x,
-                sample_y,
-                sample_y_hat,
-                self.label_hierarchy,
-                (self.prediction_output_path / "images"),
-            )
+            if self.config.prediction_write_images:
+                save_prediction(
+                    sample_x,
+                    sample_y,
+                    sample_y_hat,
+                    self.label_hierarchy,
+                    (self.prediction_output_path / "images"),
+                )
 
             y_hat_out.append(sample_y_hat)
             logits_out.append(sample_logits)
