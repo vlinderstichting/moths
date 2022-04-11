@@ -25,6 +25,7 @@ class PredictConfig(Config):
     # where the artifacts are stored to do inference with
     # usually the output of a hydra run folder (ie, `multirun/date/time/X/`)
     training_output_path: str
+    predict_data_set: str = "val"
 
 
 cs = ConfigStore.instance()
@@ -53,8 +54,14 @@ def predict(config: PredictConfig) -> None:
         label_hierarchy=label_hierarchy,
     )
 
+    loader = {
+        "train": data_module.train_dataloader(),
+        "val": data_module.val_dataloader(),
+        "test": data_module.test_dataloader(),
+    }[config.predict_data_set]
+
     trainer = get_trainer(config.trainer)
-    trainer.predict(model=lit_module, dataloaders=data_module.val_dataloader())
+    trainer.predict(model=lit_module, dataloaders=loader)
 
     # will raise in the predict of lit module if it is None
     predict_output_path = cast(str, config.lit.prediction_output_path)
