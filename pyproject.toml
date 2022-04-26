@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "moths"
-version = "v1.0.0-dev"
+version = "v0.1.0-alpha"
 description = "Classify the species, group, family and genus of moths."
 authors = ["Kay Lamerigts <k.lamerigts@gmail.com>, Lucas de Haas <lmdehaas@gmail.com>"]
 license = "MIT"

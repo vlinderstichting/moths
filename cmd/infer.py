@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple
 
@@ -13,13 +12,6 @@ from moths.classifier import load_model
 from moths.label_hierarchy import LabelHierarchy
 
 inference_app = typer.Typer()
-
-
-@dataclass
-class InferenceSampleOutput:
-    path: Path
-    klass: str
-    error_rate: float
 
 
 def infer_image(
