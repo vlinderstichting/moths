@@ -1,0 +1,6 @@
+notebooks/
+test_data/
+outputs/
+build/
+.venv/
+.pytest_cache
