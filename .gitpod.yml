@@ -1,9 +1,8 @@
-
 tasks:
   - before: |
       pip install --upgrade pip
       pip install poetry
-      poetry config virtualenvs.create false --local
+      poetry config virtualenvs.in-project true
     init: poetry install
     command: poetry shell
 
