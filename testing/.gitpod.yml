@@ -1,0 +1,6 @@
+tasks:
+  - before: pip install --upgrade pip
+    init: |
+      pip install poetry
+      poetry install
+    command: poetry shell
